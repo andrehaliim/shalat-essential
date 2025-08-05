@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     return MaterialApp(
-      title: 'Shalat Essential',
+      title: 'Muslim Prayer Essential',
       theme: appLightTheme,
       darkTheme: appDarkTheme,
       themeMode: themeProvider.themeMode,

@@ -125,7 +125,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Shalat Essential'),
+        title: const Text('Muslim Prayer Essential'),
         actions: const [
           ThemeToggleButton(),
         ],
@@ -234,7 +234,7 @@ class _HomePageState extends State<HomePage> {
                               children: [
                                 Icon(Icons.check_box_outlined, size: 30,),
                                 SizedBox(width: 5,),
-                                Text('Track Shalat', style: Theme.of(context).textTheme.bodyMedium)
+                                Text('Track Prayer', style: Theme.of(context).textTheme.bodyMedium)
                               ],
                             ),
                           ),

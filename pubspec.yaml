@@ -20,6 +20,8 @@ dependencies:
   timezone: ^0.10.1
   lat_lng_to_timezone: ^0.2.0
   intl: ^0.20.2
+  flutter_launcher_icons: ^0.14.4
+  launcher_name: ^1.0.2
 
 dev_dependencies:
   flutter_test:
@@ -31,3 +33,12 @@ flutter:
 
   uses-material-design: true
 
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/icon.png"
+  min_sdk_android: 21
+  remove_alpha_ios: true
+
+launcher_name:
+  default: "Muslim Prayer Essential"
