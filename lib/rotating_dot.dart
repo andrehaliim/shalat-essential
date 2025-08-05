@@ -4,8 +4,6 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import 'colors.dart';
-
 class RotatingDot extends StatefulWidget {
   const RotatingDot({super.key});
 
@@ -50,7 +48,7 @@ class _RotatingDotState extends State<RotatingDot> with SingleTickerProviderStat
                     width: 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryText,
+                      color: Theme.of(context).iconTheme.color,
                       shape: BoxShape.circle,
                     ),
                   ),

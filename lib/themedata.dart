@@ -7,7 +7,7 @@ final ThemeData appDarkTheme = ThemeData(
   brightness: Brightness.dark,
   scaffoldBackgroundColor: AppColors.background,
   primaryColor: AppColors.highlightBlue,
-  cardColor: AppColors.cardBackground,
+  cardColor: AppColors.containerBackground,
   dividerColor: AppColors.borderColor,
   iconTheme: const IconThemeData(color: AppColors.primaryText),
   textTheme: const TextTheme(
@@ -28,14 +28,17 @@ final ThemeData appDarkTheme = ThemeData(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
   ),
+  colorScheme: ColorScheme.dark(
+    surface: AppColors.containerBackground,
+  ),
 );
 
 // LIGHT THEME
 final ThemeData appLightTheme = ThemeData(
   brightness: Brightness.light,
-  scaffoldBackgroundColor: Colors.white,
+  scaffoldBackgroundColor: AppColors.backgroundLight,
   primaryColor: AppColors.highlightBlue,
-  cardColor: const Color(0xFFF3F6F9),
+  cardColor: AppColors.containerBackgroundLight,
   dividerColor: Colors.grey.shade300,
   iconTheme: const IconThemeData(color: Colors.black87),
   textTheme: const TextTheme(
@@ -45,10 +48,9 @@ final ThemeData appLightTheme = ThemeData(
     bodyMedium: TextStyle(color: Colors.black45, fontSize: 14),
   ),
   appBarTheme: const AppBarTheme(
-    backgroundColor: Colors.white,
+    backgroundColor: AppColors.backgroundLight,
     iconTheme: IconThemeData(color: Colors.black),
     titleTextStyle: TextStyle(color: Colors.black, fontSize: 20),
-    elevation: 1,
   ),
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
@@ -56,6 +58,9 @@ final ThemeData appLightTheme = ThemeData(
       foregroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
+  ),
+  colorScheme: ColorScheme.light(
+    surface: AppColors.containerBackgroundLight,
   ),
 );
 
