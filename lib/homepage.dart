@@ -125,7 +125,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Muslim Prayer Essential'),
+        title: const Text('Muslim Essential'),
         actions: const [
           ThemeToggleButton(),
         ],
