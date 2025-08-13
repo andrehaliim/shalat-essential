@@ -124,6 +124,10 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final screenWidth = size.width;
+    final screenHeight = size.height;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Muslim Essential'),
@@ -261,47 +265,79 @@ class _HomePageState extends State<HomePage> {
                       child: Container(
                         margin: const EdgeInsets.symmetric(vertical: 10),
                         padding: const EdgeInsets.all(10),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Minggu,', style: Theme.of(context).textTheme.bodyMedium),
-                                  Text('03 Agustus 2025', style: Theme.of(context).textTheme.bodyMedium),
-                                  const SizedBox(height: 10),
-                                  PrayerTile(name: 'Fajr', time: '04:38 AM', checked: false),
-                                  PrayerTile(name: 'Dhuhr', time: '12:04 PM', checked: true),
-                                  PrayerTile(name: 'Asr', time: '15:22 PM', checked: true),
-                                  PrayerTile(name: 'Maghrib', time: '17:58 PM', checked: true),
-                                  PrayerTile(name: 'Isha', time: '19:15 PM', checked: true),
-                                  const SizedBox(height: 10),
-                                  Text('Progress: 4/5', style: Theme.of(context).textTheme.bodyMedium),
-                                ],
+                        child: IntrinsicHeight(
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                      width: screenWidth,
+                                      height: screenHeight / 25,
+                                      child: Text('Yesterday',
+                                          style: Theme.of(context).textTheme.headlineMedium,
+                                          textAlign: TextAlign.center),
+                                    ),
+                                    Text('Sunday,', style: Theme.of(context).textTheme.bodyMedium),
+                                    Text('03 August 2025',
+                                        style: Theme.of(context).textTheme.bodyMedium),
+                                    const SizedBox(height: 10),
+                                    PrayerTile(name: 'Fajr', time: '04:38 AM', checked: false),
+                                    PrayerTile(name: 'Dhuhr', time: '12:04 PM', checked: true),
+                                    PrayerTile(name: 'Asr', time: '15:22 PM', checked: true),
+                                    PrayerTile(name: 'Maghrib', time: '17:58 PM', checked: true),
+                                    PrayerTile(name: 'Isha', time: '19:15 PM', checked: true),
+                                    const SizedBox(height: 20),
+                                    SizedBox(
+                                      width: screenWidth,
+                                      child: Text('Completed: 4/5',
+                                          style: Theme.of(context).textTheme.bodyMedium,
+                                          textAlign: TextAlign.center),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Senin,', style: Theme.of(context).textTheme.bodyMedium),
-                                  Text('04 Agustus 2025', style: Theme.of(context).textTheme.bodyMedium),
-                                  const SizedBox(height: 10),
-                                  PrayerTile(name: 'Fajr', time: '04:38 AM', checked: true),
-                                  PrayerTile(name: 'Dhuhr', time: '12:04 PM', checked: false),
-                                  PrayerTile(name: 'Asr', time: '15:22 PM', checked: false),
-                                  PrayerTile(name: 'Maghrib', time: '17:58 PM', checked: false),
-                                  PrayerTile(name: 'Isha', time: '19:15 PM', checked: false),
-                                  const SizedBox(height: 10),
-                                  Text('Progress: 1/5', style: Theme.of(context).textTheme.bodyMedium),
-                                ],
+                              const VerticalDivider(
+                                thickness: 2,
+                                width: 40,
                               ),
-                            ),
-                          ],
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                      width: screenWidth,
+                                      height: screenHeight / 25,
+                                      child: Text('Today',
+                                          style: Theme.of(context).textTheme.headlineMedium,
+                                          textAlign: TextAlign.center),
+                                    ),
+                                    Text('Monday,', style: Theme.of(context).textTheme.bodyMedium),
+                                    Text('04 August 2025',
+                                        style: Theme.of(context).textTheme.bodyMedium),
+                                    const SizedBox(height: 10),
+                                    PrayerTile(name: 'Fajr', time: '04:38 AM', checked: true),
+                                    PrayerTile(name: 'Dhuhr', time: '12:04 PM', checked: false),
+                                    PrayerTile(name: 'Asr', time: '15:22 PM', checked: false),
+                                    PrayerTile(name: 'Maghrib', time: '17:58 PM', checked: false),
+                                    PrayerTile(name: 'Isha', time: '19:15 PM', checked: false),
+                                    const SizedBox(height: 20),
+                                    SizedBox(
+                                      width: screenWidth,
+                                      child: Text('Completed: 1/5',
+                                          style: Theme.of(context).textTheme.bodyMedium,
+                                          textAlign: TextAlign.center),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     )
-                  ],
+                    ],
                 ),
               ),
             );

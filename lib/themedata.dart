@@ -12,7 +12,7 @@ final ThemeData appDarkTheme = ThemeData(
   iconTheme: const IconThemeData(color: AppColors.primaryText),
   textTheme: const TextTheme(
     headlineLarge: TextStyle(color: AppColors.primaryText, fontSize: 28, fontWeight: FontWeight.bold),
-    headlineMedium: TextStyle(color: AppColors.primaryText, fontSize: 22),
+    headlineMedium: TextStyle(color: AppColors.primaryText, fontSize: 20, fontWeight: FontWeight.bold),
     bodyLarge: TextStyle(color: AppColors.secondaryText, fontSize: 16),
     bodyMedium: TextStyle(color: AppColors.secondaryText, fontSize: 14),
   ),
@@ -72,7 +72,7 @@ class ThemeProvider with ChangeNotifier {
   bool get isDarkMode =>
       _themeMode == ThemeMode.dark ||
           (_themeMode == ThemeMode.system &&
-              WidgetsBinding.instance.window.platformBrightness == Brightness.dark);
+              WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark);
 
   void toggleTheme() {
     _themeMode = isDarkMode ? ThemeMode.light : ThemeMode.dark;
