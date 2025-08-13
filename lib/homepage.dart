@@ -6,9 +6,10 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:lat_lng_to_timezone/lat_lng_to_timezone.dart' as tzmap;
+import 'package:page_transition/page_transition.dart';
 import 'package:shalat_essential/colors.dart';
+import 'package:shalat_essential/login.dart';
 import 'package:shalat_essential/rotating_dot.dart';
-import 'package:shalat_essential/theme_button.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -126,9 +127,6 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Muslim Essential'),
-        actions: const [
-          ThemeToggleButton(),
-        ],
       ),
       body: FutureBuilder(
         future: initFuture,
@@ -158,27 +156,28 @@ class _HomePageState extends State<HomePage> {
                     Text('Next prayer is,', style: Theme.of(context).textTheme.bodyMedium),
                     Text(nextPrayer!.toUpperCase(), style: Theme.of(context).textTheme.headlineLarge),
                     Text('${timeLeft!.inHours}h ${timeLeft!.inMinutes.remainder(60)}m left', style: Theme.of(context).textTheme.bodyMedium),
-                    Container(
-                      margin: const EdgeInsets.symmetric(vertical: 10),
-                      padding: EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        children: [
-                          Column(
+                    SizedBox(height: 10,),
+                    Material(
+                      elevation: 8,
+                      borderRadius: BorderRadius.circular(10),
+                      color: Theme.of(context).colorScheme.surface,
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.all(10),
+                        child: Row(
+                          children: [
+                            Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text('Fajr', style: Theme.of(context).textTheme.bodyMedium),
                                 Text('Dhuhr', style: Theme.of(context).textTheme.bodyMedium),
                                 Text('Asr', style: Theme.of(context).textTheme.bodyMedium),
-                                Text('Magrib', style: Theme.of(context).textTheme.bodyMedium),
+                                Text('Maghrib', style: Theme.of(context).textTheme.bodyMedium),
                                 Text('Isha', style: Theme.of(context).textTheme.bodyMedium),
-                              ]
-                          ),
-                          Spacer(),
-                          Column(
+                              ],
+                            ),
+                            const Spacer(),
+                            Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(DateFormat('HH:mm').format(fajrTime!), style: Theme.of(context).textTheme.bodyMedium),
@@ -186,22 +185,24 @@ class _HomePageState extends State<HomePage> {
                                 Text(DateFormat('HH:mm').format(asrTime!), style: Theme.of(context).textTheme.bodyMedium),
                                 Text(DateFormat('HH:mm').format(maghribTime!), style: Theme.of(context).textTheme.bodyMedium),
                                 Text(DateFormat('HH:mm').format(ishaTime!), style: Theme.of(context).textTheme.bodyMedium),
-                              ]
-                          ),
-                          SizedBox(width: 10),
-                          Column(
+                              ],
+                            ),
+                            const SizedBox(width: 10),
+                            Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
+                              children: const [
                                 Icon(Icons.notifications_active, size: 20),
                                 Icon(Icons.notifications_active, size: 20),
                                 Icon(Icons.notifications_active, size: 20),
                                 Icon(Icons.notifications_active, size: 20),
                                 Icon(Icons.notifications_active, size: 20),
-                              ]
-                          )
-                        ],
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
+                    SizedBox(height: 10,),
                     Row(
                       children: [
                         Expanded(
@@ -223,70 +224,83 @@ class _HomePageState extends State<HomePage> {
                         ),
                         SizedBox(width: 20,),
                         Expanded(
-                          child: Container(
-                            padding: EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surface,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.check_box_outlined, size: 30,),
-                                SizedBox(width: 5,),
-                                Text('Track Prayer', style: Theme.of(context).textTheme.bodyMedium)
-                              ],
+                          child: GestureDetector(
+                            onTap: (){
+                              Navigator.push(
+                                context,
+                                PageTransition(
+                                  type: PageTransitionType.rightToLeft,
+                                  childBuilder: (context) => Login(),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surface,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.check_box_outlined, size: 30,),
+                                  SizedBox(width: 5,),
+                                  Text('Track Prayer', style: Theme.of(context).textTheme.bodyMedium)
+                                ],
+                              ),
                             ),
                           ),
                         )
                       ],
                     ),
-                    Container(
-                      margin: const EdgeInsets.symmetric(vertical: 10),
-                      padding: EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
+                    SizedBox(height: 10,),
+                    Material(
+                      elevation: 8,
+                      borderRadius: BorderRadius.circular(10),
+                      color: Theme.of(context).colorScheme.surface,
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.all(10),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text('Minggu,', style: Theme.of(context).textTheme.bodyMedium),
                                   Text('03 Agustus 2025', style: Theme.of(context).textTheme.bodyMedium),
-                                  SizedBox(height: 10,),
+                                  const SizedBox(height: 10),
                                   PrayerTile(name: 'Fajr', time: '04:38 AM', checked: false),
                                   PrayerTile(name: 'Dhuhr', time: '12:04 PM', checked: true),
                                   PrayerTile(name: 'Asr', time: '15:22 PM', checked: true),
                                   PrayerTile(name: 'Maghrib', time: '17:58 PM', checked: true),
                                   PrayerTile(name: 'Isha', time: '19:15 PM', checked: true),
-                                  SizedBox(height: 10,),
+                                  const SizedBox(height: 10),
                                   Text('Progress: 4/5', style: Theme.of(context).textTheme.bodyMedium),
-                                ]
+                                ],
+                              ),
                             ),
-                          ),
-                          Expanded(
-                            child: Column(
+                            Expanded(
+                              child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text('Senin,', style: Theme.of(context).textTheme.bodyMedium),
                                   Text('04 Agustus 2025', style: Theme.of(context).textTheme.bodyMedium),
-                                  SizedBox(height: 10,),
+                                  const SizedBox(height: 10),
                                   PrayerTile(name: 'Fajr', time: '04:38 AM', checked: true),
                                   PrayerTile(name: 'Dhuhr', time: '12:04 PM', checked: false),
                                   PrayerTile(name: 'Asr', time: '15:22 PM', checked: false),
                                   PrayerTile(name: 'Maghrib', time: '17:58 PM', checked: false),
                                   PrayerTile(name: 'Isha', time: '19:15 PM', checked: false),
-                                  SizedBox(height: 10,),
+                                  const SizedBox(height: 10),
                                   Text('Progress: 1/5', style: Theme.of(context).textTheme.bodyMedium),
-                                ]
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
+                    )
                   ],
                 ),
               ),

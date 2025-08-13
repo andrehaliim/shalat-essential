@@ -24,8 +24,8 @@ final ThemeData appDarkTheme = ThemeData(
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
       backgroundColor: AppColors.buttonBackground,
-      foregroundColor: AppColors.primaryText,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      elevation: 8
     ),
   ),
   colorScheme: ColorScheme.dark(
@@ -40,12 +40,12 @@ final ThemeData appLightTheme = ThemeData(
   primaryColor: AppColors.highlightBlue,
   cardColor: AppColors.containerBackgroundLight,
   dividerColor: Colors.grey.shade300,
-  iconTheme: const IconThemeData(color: Colors.black87),
+  iconTheme: const IconThemeData(color: AppColors.highlightBlue),
   textTheme: const TextTheme(
     headlineLarge: TextStyle(color: Colors.black, fontSize: 28, fontWeight: FontWeight.bold),
-    headlineMedium: TextStyle(color: Colors.black87, fontSize: 22),
-    bodyLarge: TextStyle(color: Colors.black54, fontSize: 16),
-    bodyMedium: TextStyle(color: Colors.black45, fontSize: 14),
+    headlineMedium: TextStyle(color: Colors.black, fontSize: 22),
+    bodyLarge: TextStyle(color: Colors.black, fontSize: 16),
+    bodyMedium: TextStyle(color: Colors.black, fontSize: 14),
   ),
   appBarTheme: const AppBarTheme(
     backgroundColor: AppColors.backgroundLight,

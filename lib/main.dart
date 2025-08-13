@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
       title: 'Muslim Essential',
       theme: appLightTheme,
       darkTheme: appDarkTheme,
-      themeMode: themeProvider.themeMode,
+      themeMode: ThemeMode.dark,
       debugShowCheckedModeBanner: false,
       home: HomePage(),
     );
