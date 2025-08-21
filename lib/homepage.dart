@@ -31,10 +31,10 @@ class _HomePageState extends State<HomePage> {
   DateTime? asrTime;
   DateTime? maghribTime;
   DateTime? ishaTime;
-  Duration? timeLeft;
-  String? nextPrayer;
   DateTime? _lastTime;
   Timer? _timer;
+  String nextPrayer = '';
+  String nextPrayerTime = '';
 
   @override
   void initState() {
@@ -97,21 +97,6 @@ class _HomePageState extends State<HomePage> {
     params.madhab = Madhab.shafi;
 
     PrayerTimes prayerTimes = PrayerTimes(coordinates: coordinates, date: date, calculationParameters: params, precision: true);
-    nextPrayer = prayerTimes.nextPrayer(date: date);
-    DateTime? nextPrayerTime;
-    nextPrayerTime = {
-      Prayer.fajr: prayerTimes.fajr,
-      Prayer.dhuhr: prayerTimes.dhuhr,
-      Prayer.asr: prayerTimes.asr,
-      Prayer.maghrib: prayerTimes.maghrib,
-      Prayer.isha: prayerTimes.isha,
-    }[nextPrayer];
-
-    timeLeft = nextPrayerTime!.difference(date);
-
-    print('----- getting prayer time for $location -----');
-    print('----- next prayer is ${prayerTimes.nextPrayer(date: date)} -----');
-    print('----- time left before next prayer is ${timeLeft!.inHours}h ${timeLeft!.inMinutes.remainder(60)}m -----');
 
     setState(() {
       fajrTime = tz.TZDateTime.from(prayerTimes.fajr!, location);
@@ -119,6 +104,35 @@ class _HomePageState extends State<HomePage> {
       asrTime = tz.TZDateTime.from(prayerTimes.asr!, location);
       maghribTime = tz.TZDateTime.from(prayerTimes.maghrib!, location);
       ishaTime = tz.TZDateTime.from(prayerTimes.isha!, location);
+      DateTime nextTime;
+      String prayerName;
+
+      if (date.isBefore(fajrTime!)) {
+        prayerName = "Fajr";
+        nextTime = fajrTime!;
+      } else if (date.isBefore(dhuhrTime!)) {
+        prayerName = "Dhuhr";
+        nextTime = dhuhrTime!;
+      } else if (date.isBefore(asrTime!)) {
+        prayerName = "Asr";
+        nextTime = asrTime!;
+      } else if (date.isBefore(maghribTime!)) {
+        prayerName = "Maghrib";
+        nextTime = maghribTime!;
+      } else if (date.isBefore(ishaTime!)) {
+        prayerName = "Isha";
+        nextTime = ishaTime!;
+      } else {
+        prayerName = "Fajr (Tomorrow)";
+        nextTime = fajrTime!.add(const Duration(days: 1));
+      }
+
+      Duration remaining = nextTime.difference(date);
+      String hours = remaining.inHours.toString().padLeft(2, '0');
+      String minutes = (remaining.inMinutes % 60).toString().padLeft(2, '0');
+
+      nextPrayer = prayerName;
+      nextPrayerTime = "in ${hours}h ${minutes}m";
     });
   }
 
@@ -158,8 +172,8 @@ class _HomePageState extends State<HomePage> {
                     ),
                     SizedBox(height: 20,),
                     Text('Next prayer is,', style: Theme.of(context).textTheme.bodyMedium),
-                    Text(nextPrayer!.toUpperCase(), style: Theme.of(context).textTheme.headlineLarge),
-                    Text('${timeLeft!.inHours}h ${timeLeft!.inMinutes.remainder(60)}m left', style: Theme.of(context).textTheme.bodyMedium),
+                    Text(nextPrayer, style: Theme.of(context).textTheme.headlineLarge),
+                    Text(nextPrayerTime, style: Theme.of(context).textTheme.bodyMedium),
                     SizedBox(height: 10,),
                     Material(
                       elevation: 8,
@@ -221,7 +235,7 @@ class _HomePageState extends State<HomePage> {
                               children: [
                                 Icon(Icons.compass_calibration_outlined, size: 30,),
                                 SizedBox(width: 5,),
-                                Text('Kompas Kiblat', style: Theme.of(context).textTheme.bodyMedium)
+                                Text('Qibla Compass', style: Theme.of(context).textTheme.bodyMedium)
                               ],
                             ),
                           ),
