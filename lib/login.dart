@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shalat_essential/rotating_dot.dart';
 
@@ -16,11 +17,36 @@ class _LoginState extends State<Login> {
   final passwordController = TextEditingController();
   bool obscurePassword = true;
   bool isLoading = false;
+  final auth = FirebaseAuth.instance;
 
   void loginLoading() {
     setState(() {
       isLoading = !isLoading;
     });
+  }
+
+  Future<void> doLogin() async {
+    try {
+      await auth.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Login successful")),
+      );
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final idToken = await user.getIdToken(); // normal token
+        final idTokenResult = await user.getIdTokenResult(); // with extra info
+        print("Token: $idToken");
+        print("Expires at: ${idTokenResult.expirationTime}");
+      }
+    } on FirebaseAuthException catch (e) {
+      print(e.message ?? '');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? "Login failed")),
+      );
+    }
   }
 
   @override
@@ -155,7 +181,7 @@ class _LoginState extends State<Login> {
                       print("Password: ${passwordController.text}");
 
                       loginLoading();
-                      await Future.delayed(Duration(seconds: 2));
+                      await doLogin();
                       loginLoading();
                     }
                   },
