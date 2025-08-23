@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:adhan_dart/adhan_dart.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
@@ -35,13 +37,13 @@ class _HomePageState extends State<HomePage> {
   Timer? _timer;
   String nextPrayer = '';
   String nextPrayerTime = '';
+  String? nickname;
 
   @override
   void initState() {
     super.initState();
     initFuture = initAll();
     _lastTime = DateTime.now();
-
     _timer = Timer.periodic(Duration(seconds: 10), (timer) {
       DateTime now = DateTime.now();
 
@@ -50,6 +52,7 @@ class _HomePageState extends State<HomePage> {
         _lastTime = now;
       }
     });
+    _loadNickname();
   }
 
   @override
@@ -123,7 +126,7 @@ class _HomePageState extends State<HomePage> {
         prayerName = "Isha";
         nextTime = ishaTime!;
       } else {
-        prayerName = "Fajr (Tomorrow)";
+        prayerName = "Fajr";
         nextTime = fajrTime!.add(const Duration(days: 1));
       }
 
@@ -136,6 +139,15 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  Future<void> _logout() async {
+    await FirebaseAuth.instance.signOut();
+    if (mounted) {
+      setState(() {
+        print('logout success');
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -144,7 +156,16 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Muslim Essential'),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Muslim Essential'),
+            GestureDetector(
+              onTap: _logout,
+              child: Icon(Icons.logout),
+            ),
+          ],
+        ),
       ),
       body: FutureBuilder(
         future: initFuture,
@@ -160,6 +181,9 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Text('Assalamualaikum,', style: Theme.of(context).textTheme.bodyMedium),
+                    Text(nickname != null ? '$nickname' : 'Guest', style: Theme.of(context).textTheme.headlineLarge),
+                    SizedBox(height: 20,),
                     GestureDetector(
                       onTap: initAll,
                       child: Row(
@@ -180,7 +204,6 @@ class _HomePageState extends State<HomePage> {
                       borderRadius: BorderRadius.circular(10),
                       color: Theme.of(context).colorScheme.surface,
                       child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 10),
                         padding: const EdgeInsets.all(10),
                         child: Row(
                           children: [
@@ -243,14 +266,24 @@ class _HomePageState extends State<HomePage> {
                         SizedBox(width: 20,),
                         Expanded(
                           child: GestureDetector(
-                            onTap: (){
-                              Navigator.push(
-                                context,
-                                PageTransition(
-                                  type: PageTransitionType.rightToLeft,
-                                  childBuilder: (context) => Login(),
-                                ),
-                              );
+                            onTap: () async{
+                              final user = FirebaseAuth.instance.currentUser;
+                              if (user == null) {
+                                bool user = await Navigator.push(
+                                  context,
+                                  PageTransition(
+                                    type: PageTransitionType.rightToLeft,
+                                    childBuilder: (context) => Login(),
+                                  ),
+                                );
+                                if(user){
+                                  _loadNickname();
+                                }
+                              } else {
+                                setState(() {
+                                  print('user has login');
+                                });
+                              }
                             },
                             child: Container(
                               padding: EdgeInsets.all(10),
@@ -360,6 +393,23 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+
+  Future<void> _loadNickname() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final doc = await FirebaseFirestore.instance
+          .collection("users")
+          .doc(user.uid)
+          .get();
+
+      if (doc.exists) {
+        setState(() {
+          nickname = doc.data()?["nickname"];
+        });
+      }
+    }
+  }
+
 }
 class PrayerTile extends StatelessWidget {
   final String name;
