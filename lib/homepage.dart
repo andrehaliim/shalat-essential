@@ -143,7 +143,10 @@ class _HomePageState extends State<HomePage> {
     await FirebaseAuth.instance.signOut();
     if (mounted) {
       setState(() {
-        print('logout success');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Logout successful")),
+        );
+        nickname = null;
       });
     }
   }
