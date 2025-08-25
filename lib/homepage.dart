@@ -11,6 +11,7 @@ import 'package:lat_lng_to_timezone/lat_lng_to_timezone.dart' as tzmap;
 import 'package:page_transition/page_transition.dart';
 import 'package:shalat_essential/colors.dart';
 import 'package:shalat_essential/login.dart';
+import 'package:shalat_essential/prayer_model.dart';
 import 'package:shalat_essential/rotating_dot.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -38,6 +39,11 @@ class _HomePageState extends State<HomePage> {
   String nextPrayer = '';
   String nextPrayerTime = '';
   String? nickname;
+  bool isLoadingTracker = false;
+  PrayerModel? todayPrayer;
+  PrayerModel? yesterdayPrayer;
+  DateTime todayDate = DateTime.now();
+  DateTime yesterdayDate = DateTime.now().subtract(const Duration(days: 1));
 
   @override
   void initState() {
@@ -52,7 +58,6 @@ class _HomePageState extends State<HomePage> {
         _lastTime = now;
       }
     });
-    _loadNickname();
   }
 
   @override
@@ -62,12 +67,18 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> initAll() async {
+    final user = FirebaseAuth.instance.currentUser;
+
     setState(() {
       isGetLocation = true;
     });
     final position = await determinePosition();
     await getLocationName(position);
     await getShalatData(position);
+    if(user != null) {
+      loadNickname();
+      getTracker(user.uid);
+    }
     setState(() {
       isGetLocation = false;
     });
@@ -147,6 +158,8 @@ class _HomePageState extends State<HomePage> {
           const SnackBar(content: Text("Logout successful")),
         );
         nickname = null;
+        todayPrayer = null;
+        yesterdayPrayer = null;
       });
     }
   }
@@ -272,19 +285,23 @@ class _HomePageState extends State<HomePage> {
                             onTap: () async{
                               final user = FirebaseAuth.instance.currentUser;
                               if (user == null) {
-                                bool user = await Navigator.push(
+                                bool refresh = await Navigator.push(
                                   context,
                                   PageTransition(
                                     type: PageTransitionType.rightToLeft,
                                     childBuilder: (context) => Login(),
                                   ),
                                 );
-                                if(user){
-                                  _loadNickname();
+                                if(refresh){
+                                  initAll();
                                 }
                               } else {
                                 setState(() {
-                                  print('user has login');
+                                  isLoadingTracker = true;
+                                });
+                                await trackPrayer(user.uid);
+                                setState(() {
+                                  isLoadingTracker = false;
                                 });
                               }
                             },
@@ -297,7 +314,7 @@ class _HomePageState extends State<HomePage> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.check_box_outlined, size: 30,),
+                                  !isLoadingTracker ? Icon(Icons.check_box_outlined, size: 30,) : RotatingDot(),
                                   SizedBox(width: 5,),
                                   Text('Track Prayer', style: Theme.of(context).textTheme.bodyMedium)
                                 ],
@@ -329,22 +346,10 @@ class _HomePageState extends State<HomePage> {
                                           style: Theme.of(context).textTheme.headlineMedium,
                                           textAlign: TextAlign.center),
                                     ),
-                                    Text('Sunday,', style: Theme.of(context).textTheme.bodyMedium),
-                                    Text('03 August 2025',
-                                        style: Theme.of(context).textTheme.bodyMedium),
+                                    Text(DateFormat('EEEE').format(yesterdayDate), style: Theme.of(context).textTheme.bodyMedium),
+                                    Text(DateFormat("dd MMMM yyyy").format(yesterdayDate),style: Theme.of(context).textTheme.bodyMedium),
                                     const SizedBox(height: 10),
-                                    PrayerTile(name: 'Fajr', time: '04:38 AM', checked: false),
-                                    PrayerTile(name: 'Dhuhr', time: '12:04 PM', checked: true),
-                                    PrayerTile(name: 'Asr', time: '15:22 PM', checked: true),
-                                    PrayerTile(name: 'Maghrib', time: '17:58 PM', checked: true),
-                                    PrayerTile(name: 'Isha', time: '19:15 PM', checked: true),
-                                    const SizedBox(height: 20),
-                                    SizedBox(
-                                      width: screenWidth,
-                                      child: Text('Completed: 4/5',
-                                          style: Theme.of(context).textTheme.bodyMedium,
-                                          textAlign: TextAlign.center),
-                                    ),
+                                    PrayerTile(prayerModel: yesterdayPrayer),
                                   ],
                                 ),
                               ),
@@ -363,22 +368,10 @@ class _HomePageState extends State<HomePage> {
                                           style: Theme.of(context).textTheme.headlineMedium,
                                           textAlign: TextAlign.center),
                                     ),
-                                    Text('Monday,', style: Theme.of(context).textTheme.bodyMedium),
-                                    Text('04 August 2025',
-                                        style: Theme.of(context).textTheme.bodyMedium),
+                                    Text(DateFormat('EEEE').format(todayDate), style: Theme.of(context).textTheme.bodyMedium),
+                                    Text(DateFormat("dd MMMM yyyy").format(todayDate),style: Theme.of(context).textTheme.bodyMedium),
                                     const SizedBox(height: 10),
-                                    PrayerTile(name: 'Fajr', time: '04:38 AM', checked: true),
-                                    PrayerTile(name: 'Dhuhr', time: '12:04 PM', checked: false),
-                                    PrayerTile(name: 'Asr', time: '15:22 PM', checked: false),
-                                    PrayerTile(name: 'Maghrib', time: '17:58 PM', checked: false),
-                                    PrayerTile(name: 'Isha', time: '19:15 PM', checked: false),
-                                    const SizedBox(height: 20),
-                                    SizedBox(
-                                      width: screenWidth,
-                                      child: Text('Completed: 1/5',
-                                          style: Theme.of(context).textTheme.bodyMedium,
-                                          textAlign: TextAlign.center),
-                                    ),
+                                    PrayerTile(prayerModel: todayPrayer),
                                   ],
                                 ),
                               ),
@@ -397,7 +390,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Future<void> _loadNickname() async {
+  Future<void> loadNickname() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       final doc = await FirebaseFirestore.instance
@@ -413,31 +406,235 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> trackPrayer(String userId) async {
+    final todayDoc = await getTracker(userId);
+    if (todayDoc['today'] != null) {
+      await updateTracker(userId);
+    } else {
+      await createTracker(userId);
+    }
+  }
+
+  Future<PrayerModel> createTracker(String userId) async {
+    final today = DateTime.now();
+    final dateString =
+        "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+
+    final times = {
+      "fajr": fajrTime,
+      "dhuhr": dhuhrTime,
+      "asr": asrTime,
+      "maghrib": maghribTime,
+      "isha": ishaTime,
+    };
+
+    final currentPrayer = getCurrentTracker(today, times);
+
+    final docRef = FirebaseFirestore.instance
+        .collection('tracker')
+        .doc(userId)
+        .collection('prayer')
+        .doc(dateString);
+
+    final newDay = PrayerModel();
+    final map = newDay.toMap();
+    map[currentPrayer] = 1;
+    await docRef.set(map);
+
+    initAll();
+
+    return newDay;
+  }
+
+  Future<Map<String, PrayerModel?>> getTracker(String userId) async {
+    final now = DateTime.now();
+
+    // format helper
+    String formatDate(DateTime date) =>
+        "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+
+    final todayString = formatDate(now);
+    final yesterdayString = formatDate(now.subtract(const Duration(days: 1)));
+
+    final firestore = FirebaseFirestore.instance;
+
+    // today doc
+    final todayDoc = await firestore
+        .collection('tracker')
+        .doc(userId)
+        .collection('prayer')
+        .doc(todayString)
+        .get();
+
+    // yesterday doc
+    final yesterdayDoc = await firestore
+        .collection('tracker')
+        .doc(userId)
+        .collection('prayer')
+        .doc(yesterdayString)
+        .get();
+
+    setState(() {
+      todayPrayer = todayDoc.exists ? PrayerModel.fromMap(todayDoc.data()!) : null;
+      yesterdayPrayer = yesterdayDoc.exists ? PrayerModel.fromMap(yesterdayDoc.data()!) : null;
+    });
+
+    return {
+      "today": todayDoc.exists ? PrayerModel.fromMap(todayDoc.data()!) : null,
+      "yesterday": yesterdayDoc.exists ? PrayerModel.fromMap(yesterdayDoc.data()!) : null,
+    };
+  }
+
+  Future<void> updateTracker(String userId) async {
+    final now = DateTime.now();
+
+    final dateString =
+        "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+
+    final times = {
+      "fajr": fajrTime,
+      "dhuhr": dhuhrTime,
+      "asr": asrTime,
+      "maghrib": maghribTime,
+      "isha": ishaTime,
+    };
+
+    final currentPrayer = getCurrentTracker(now, times);
+
+    await FirebaseFirestore.instance
+        .collection('tracker')
+        .doc(userId)
+        .collection('prayer')
+        .doc(dateString)
+        .set({
+      currentPrayer: 1,
+    }, SetOptions(merge: true));
+
+    print("Updated $currentPrayer for $dateString ✅");
+  }
+
+  String getCurrentTracker(DateTime now, Map<String, DateTime?> times) {
+    final orderedPrayers = [
+      {"name": "fajr", "time": times["fajr"]!},
+      {"name": "dhuhr", "time": times["dhuhr"]!},
+      {"name": "asr", "time": times["asr"]!},
+      {"name": "maghrib", "time": times["maghrib"]!},
+      {"name": "isha", "time": times["isha"]!},
+    ];
+
+    String currentPrayer = "fajr";
+    for (var prayer in orderedPrayers) {
+      if (now.isAfter(prayer["time"] as DateTime)) {
+        currentPrayer = prayer["name"] as String;
+      }
+    }
+    return currentPrayer;
+  }
 }
+
 class PrayerTile extends StatelessWidget {
-  final String name;
-  final String time;
-  final bool checked;
+  final PrayerModel? prayerModel;
 
   const PrayerTile({
     super.key,
-    required this.name,
-    required this.time,
-    required this.checked,
+    this.prayerModel,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(
-          checked ? Icons.check_circle : Icons.radio_button_unchecked,
-          color: checked ? AppColors.highlightBlue : AppColors.borderColor,
-          size: 20,
-        ),
-        SizedBox(width: 10,),
-        Text(name, style: Theme.of(context).textTheme.bodyMedium),
-      ],
-    );
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    if (prayerModel != null) {
+      int completed = prayerModel!.fajr + prayerModel!.dhuhr + prayerModel!.asr + prayerModel!.maghrib + prayerModel!.isha;
+
+      return Column(
+        children: [
+          Row(
+            children: [
+              Icon(
+                prayerModel!.fajr == 1
+                    ? Icons.check_circle
+                    : Icons.radio_button_unchecked,
+                color: prayerModel!.fajr == 1
+                    ? AppColors.highlightBlue
+                    : AppColors.borderColor,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Text('Fajr', style: Theme.of(context).textTheme.bodyMedium),
+            ],
+          ),
+          Row(
+            children: [
+              Icon(
+                prayerModel!.dhuhr == 1
+                    ? Icons.check_circle
+                    : Icons.radio_button_unchecked,
+                color: prayerModel!.dhuhr == 1
+                    ? AppColors.highlightBlue
+                    : AppColors.borderColor,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Text('Dhuhr', style: Theme.of(context).textTheme.bodyMedium),
+            ],
+          ),
+          Row(
+            children: [
+              Icon(
+                prayerModel!.asr == 1
+                    ? Icons.check_circle
+                    : Icons.radio_button_unchecked,
+                color: prayerModel!.asr == 1
+                    ? AppColors.highlightBlue
+                    : AppColors.borderColor,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Text('Asr', style: Theme.of(context).textTheme.bodyMedium),
+            ],
+          ),
+          Row(
+            children: [
+              Icon(
+                prayerModel!.maghrib == 1
+                    ? Icons.check_circle
+                    : Icons.radio_button_unchecked,
+                color: prayerModel!.maghrib == 1
+                    ? AppColors.highlightBlue
+                    : AppColors.borderColor,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Text('Maghrib', style: Theme.of(context).textTheme.bodyMedium),
+            ],
+          ),
+          Row(
+            children: [
+              Icon(
+                prayerModel!.isha == 1
+                    ? Icons.check_circle
+                    : Icons.radio_button_unchecked,
+                color: prayerModel!.isha == 1
+                    ? AppColors.highlightBlue
+                    : AppColors.borderColor,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Text('Isha', style: Theme.of(context).textTheme.bodyMedium),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: screenWidth,
+            child: Text('Completed: $completed/5',
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center),
+          ),
+        ],
+      );
+    } else {
+      return Text('No data', style: Theme.of(context).textTheme.bodyMedium);
+    }
   }
 }
