@@ -5,9 +5,11 @@ import 'package:shalat_essential/homepage.dart';
 import 'package:shalat_essential/themedata.dart';
 
 import 'firebase_options.dart';
+import 'notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.init();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );

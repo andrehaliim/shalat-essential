@@ -44,6 +44,11 @@ class _HomePageState extends State<HomePage> {
   PrayerModel? yesterdayPrayer;
   DateTime todayDate = DateTime.now();
   DateTime yesterdayDate = DateTime.now().subtract(const Duration(days: 1));
+  bool fajrNotif = false;
+  bool dhuhrNotif = false;
+  bool asrNotif = false;
+  bool maghribNotif = false;
+  bool ishaNotif = false;
 
   @override
   void initState() {
@@ -211,9 +216,40 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     SizedBox(height: 20,),
-                    Text('Next prayer is,', style: Theme.of(context).textTheme.bodyMedium),
-                    Text(nextPrayer, style: Theme.of(context).textTheme.headlineLarge),
-                    Text(nextPrayerTime, style: Theme.of(context).textTheme.bodyMedium),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Next prayer is,', style: Theme.of(context).textTheme.bodyMedium),
+                              Text(nextPrayer, style: Theme.of(context).textTheme.headlineLarge),
+                              Text(nextPrayerTime, style: Theme.of(context).textTheme.bodyMedium),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () async {
+
+                          },
+                          child: Container(
+                            padding: EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.explore, size: 30,),
+                                SizedBox(width: 5,),
+                                Text('Qibla', style: Theme.of(context).textTheme.bodyMedium)
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                     SizedBox(height: 10,),
                     Material(
                       elevation: 8,
@@ -247,82 +283,48 @@ class _HomePageState extends State<HomePage> {
                             const SizedBox(width: 10),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
-                              children: const [
-                                Icon(Icons.notifications_active, size: 20),
-                                Icon(Icons.notifications_active, size: 20),
-                                Icon(Icons.notifications_active, size: 20),
-                                Icon(Icons.notifications_active, size: 20),
-                                Icon(Icons.notifications_active, size: 20),
+                              children: [
+                                GestureDetector(
+                                    onTap: (){
+                                      setState(() {
+                                        fajrNotif = !fajrNotif;
+                                      });
+                                    },
+                                    child: !fajrNotif ? Icon(Icons.notifications_active_outlined, size: 20) : Icon(Icons.notifications_off_outlined, size: 20)),
+                                GestureDetector(
+                                    onTap: (){
+                                      setState(() {
+                                        dhuhrNotif = !dhuhrNotif;
+                                      });
+                                    },
+                                    child: !dhuhrNotif ? Icon(Icons.notifications_active_outlined, size: 20) : Icon(Icons.notifications_off_outlined, size: 20)),
+                                GestureDetector(
+                                    onTap: (){
+                                      setState(() {
+                                        asrNotif = !asrNotif;
+                                      });
+                                    },
+                                    child: !asrNotif ? Icon(Icons.notifications_active_outlined, size: 20) : Icon(Icons.notifications_off_outlined, size: 20)),
+                                GestureDetector(
+                                    onTap: (){
+                                      setState(() {
+                                        maghribNotif = !maghribNotif;
+                                      });
+                                    },
+                                    child: !maghribNotif ? Icon(Icons.notifications_active_outlined, size: 20) : Icon(Icons.notifications_off_outlined, size: 20)),
+                                GestureDetector(
+                                    onTap: (){
+                                      setState(() {
+                                        ishaNotif = !ishaNotif;
+                                      });
+                                    },
+                                    child: !ishaNotif ? Icon(Icons.notifications_active_outlined, size: 20) : Icon(Icons.notifications_off_outlined, size: 20)),
+
                               ],
                             ),
                           ],
                         ),
                       ),
-                    ),
-                    SizedBox(height: 10,),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surface,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.compass_calibration_outlined, size: 30,),
-                                SizedBox(width: 5,),
-                                Text('Qibla Compass', style: Theme.of(context).textTheme.bodyMedium)
-                              ],
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 20,),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () async{
-                              final user = FirebaseAuth.instance.currentUser;
-                              if (user == null) {
-                                bool refresh = await Navigator.push(
-                                  context,
-                                  PageTransition(
-                                    type: PageTransitionType.rightToLeft,
-                                    childBuilder: (context) => Login(),
-                                  ),
-                                );
-                                if(refresh){
-                                  initAll();
-                                }
-                              } else {
-                                setState(() {
-                                  isLoadingTracker = true;
-                                });
-                                await trackPrayer(user.uid);
-                                setState(() {
-                                  isLoadingTracker = false;
-                                });
-                              }
-                            },
-                            child: Container(
-                              padding: EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surface,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  !isLoadingTracker ? Icon(Icons.check_box_outlined, size: 30,) : RotatingDot(),
-                                  SizedBox(width: 5,),
-                                  Text('Track Prayer', style: Theme.of(context).textTheme.bodyMedium)
-                                ],
-                              ),
-                            ),
-                          ),
-                        )
-                      ],
                     ),
                     SizedBox(height: 10,),
                     Material(
@@ -379,8 +381,55 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                       ),
-                    )
-                    ],
+                    ),
+                    SizedBox(height: 10,),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () async{
+                              final user = FirebaseAuth.instance.currentUser;
+                              if (user == null) {
+                                bool refresh = await Navigator.push(
+                                  context,
+                                  PageTransition(
+                                    type: PageTransitionType.rightToLeft,
+                                    childBuilder: (context) => Login(),
+                                  ),
+                                );
+                                if(refresh){
+                                  initAll();
+                                }
+                              } else {
+                                setState(() {
+                                  isLoadingTracker = true;
+                                });
+                                await trackPrayer(user.uid);
+                                setState(() {
+                                  isLoadingTracker = false;
+                                });
+                              }
+                            },
+                            child: Container(
+                              padding: EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surface,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  !isLoadingTracker ? Icon(Icons.check_box_outlined, size: 30,) : RotatingDot(),
+                                  SizedBox(width: 5,),
+                                  Text('Track Prayer', style: Theme.of(context).textTheme.bodyMedium)
+                                ],
+                              ),
+                            ),
+                          ),
+                        )
+                      ],
+                    ),
+                  ],
                 ),
               ),
             );
