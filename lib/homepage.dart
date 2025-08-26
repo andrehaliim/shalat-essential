@@ -115,7 +115,7 @@ class _HomePageState extends State<HomePage> {
     CalculationParameters params = CalculationMethod.singapore();
     params.madhab = Madhab.shafi;
 
-    PrayerTimes prayerTimes = PrayerTimes(coordinates: coordinates, date: date, calculationParameters: params, precision: true);
+    PrayerTimes prayerTimes = PrayerTimes(coordinates: coordinates, date: date, calculationParameters: params);
 
     setState(() {
       fajrTime = tz.TZDateTime.from(prayerTimes.fajr!, location);
@@ -216,39 +216,38 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     SizedBox(height: 20,),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Next prayer is,', style: Theme.of(context).textTheme.bodyMedium),
-                              Text(nextPrayer, style: Theme.of(context).textTheme.headlineLarge),
-                              Text(nextPrayerTime, style: Theme.of(context).textTheme.bodyMedium),
-                            ],
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () async {
-
-                          },
-                          child: Container(
-                            padding: EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surface,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            flex: 3,
                             child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(Icons.explore, size: 30,),
-                                SizedBox(width: 5,),
-                                Text('Qibla', style: Theme.of(context).textTheme.bodyMedium)
+                                Text('Next prayer is,', style: Theme.of(context).textTheme.bodyMedium),
+                                Text(nextPrayer, style: Theme.of(context).textTheme.headlineLarge),
+                                Text(nextPrayerTime, style: Theme.of(context).textTheme.bodyMedium),
                               ],
                             ),
                           ),
-                        ),
-                      ],
+                          Expanded(
+                            flex: 1,
+                            child: ElevatedButton(
+                              style: Theme.of(context).elevatedButtonTheme.style,
+                              onPressed: () async {},
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.explore, size: 30, color: AppColors.primaryText),
+                                  SizedBox(height: 5),
+                                  Text('Qibla', style: Theme.of(context).textTheme.bodyMedium),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     SizedBox(height: 10,),
                     Material(
@@ -386,8 +385,12 @@ class _HomePageState extends State<HomePage> {
                     Row(
                       children: [
                         Expanded(
-                          child: GestureDetector(
-                            onTap: () async{
+                          child: SizedBox(
+                          width: screenWidth,
+                          height: kMinInteractiveDimension,
+                          child: ElevatedButton(
+                            style: Theme.of(context).elevatedButtonTheme.style,
+                            onPressed: () async{
                               final user = FirebaseAuth.instance.currentUser;
                               if (user == null) {
                                 bool refresh = await Navigator.push(
@@ -410,20 +413,15 @@ class _HomePageState extends State<HomePage> {
                                 });
                               }
                             },
-                            child: Container(
-                              padding: EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surface,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  !isLoadingTracker ? Icon(Icons.check_box_outlined, size: 30,) : RotatingDot(),
-                                  SizedBox(width: 5,),
-                                  Text('Track Prayer', style: Theme.of(context).textTheme.bodyMedium)
-                                ],
-                              ),
+                            child: isLoadingTracker
+                                ? RotatingDot()
+                                : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.check_box_outlined, size: 30, color: AppColors.primaryText,),
+                                    Text('Track Prayer', style: Theme.of(context).primaryTextTheme.labelLarge),
+                                  ],
+                                ),
                             ),
                           ),
                         )
