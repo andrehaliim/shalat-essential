@@ -1,13 +1,13 @@
 import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/data/latest.dart' as tz;
+import 'package:intl/intl.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();
 
   static Future<void> init() async {
-    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidInit = AndroidInitializationSettings('ic_stat_prayer');
     const initSettings = InitializationSettings(android: androidInit);
 
     await _notifications.initialize(initSettings);
@@ -46,26 +46,46 @@ class NotificationService {
   }
 
   static Future<void> scheduleNotification({required int id, required String title, required String body, required DateTime? scheduledTime}) async {
-    print(scheduledTime);
-    await _notifications.zonedSchedule(
-        id,
-        title,
-        body,
-        tz.TZDateTime.now(tz.local).add(const Duration(seconds: 10)),
-        const NotificationDetails(
-            android: AndroidNotificationDetails(
-              'your channel id',
-              'your channel name',
-              channelDescription: 'your channel description',
-              importance: Importance.max,
-              priority: Priority.high,
-              playSound: true,
-              enableVibration: true
-            )),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle);
+    if(scheduledTime != null){
+      var tzScheduled = tz.TZDateTime.from(scheduledTime, tz.local).subtract(const Duration(minutes: 5));
+
+      if (tzScheduled.isBefore(tz.TZDateTime.now(tz.local))) {
+        tzScheduled = tzScheduled.add(const Duration(days: 1));
+      }
+
+      await _notifications.zonedSchedule(
+          id,
+          title,
+          body,
+          tzScheduled,
+          const NotificationDetails(
+              android: AndroidNotificationDetails(
+                  'your channel id',
+                  'your channel name',
+                  channelDescription: 'your channel description',
+                  importance: Importance.max,
+                  priority: Priority.high,
+                  playSound: true,
+                  enableVibration: true,
+                  icon: 'ic_stat_prayer',
+              )),
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle);
+
+      logNotification(scheduledTime, id, null);
+    }
+  }
+
+  static Future<void> cancel(int id) async {
+    await _notifications.cancel(id);
   }
 
   static Future<List<PendingNotificationRequest>> getPendingNotifications() async {
     return await _notifications.pendingNotificationRequests();
+  }
+
+  static void logNotification(DateTime dateTime, int id, bool? isInit) {
+    final dateStr = DateFormat('yyyy-MM-dd').format(dateTime);
+    final timeStr = DateFormat('HH:mm:ss').format(dateTime);
+    print("🔔 Notification scheduled for $dateStr at $timeStr (ID: $id) is init : $isInit");
   }
 }

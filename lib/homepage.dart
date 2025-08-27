@@ -4,6 +4,7 @@ import 'package:adhan_dart/adhan_dart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
@@ -12,11 +13,13 @@ import 'package:page_transition/page_transition.dart';
 import 'package:shalat_essential/colors.dart';
 import 'package:shalat_essential/login.dart';
 import 'package:shalat_essential/prayer_model.dart';
+import 'package:shalat_essential/prefs_service.dart';
 import 'package:shalat_essential/rotating_dot.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 import 'get_location.dart';
+import 'notification_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -29,11 +32,6 @@ class _HomePageState extends State<HomePage> {
   bool isGetLocation = false;
   late Future<void> initFuture;
   String locationName = '';
-  DateTime? fajrTime;
-  DateTime? dhuhrTime;
-  DateTime? asrTime;
-  DateTime? maghribTime;
-  DateTime? ishaTime;
   DateTime? _lastTime;
   Timer? _timer;
   String nextPrayer = '';
@@ -44,11 +42,7 @@ class _HomePageState extends State<HomePage> {
   PrayerModel? yesterdayPrayer;
   DateTime todayDate = DateTime.now();
   DateTime yesterdayDate = DateTime.now().subtract(const Duration(days: 1));
-  bool fajrNotif = false;
-  bool dhuhrNotif = false;
-  bool asrNotif = false;
-  bool maghribNotif = false;
-  bool ishaNotif = false;
+  PrayerModel prayerModel = PrayerModel.empty();
 
   @override
   void initState() {
@@ -80,6 +74,7 @@ class _HomePageState extends State<HomePage> {
     final position = await determinePosition();
     await getLocationName(position);
     await getShalatData(position);
+    await loadPrefs();
     if(user != null) {
       loadNickname();
       getTracker(user.uid);
@@ -118,32 +113,32 @@ class _HomePageState extends State<HomePage> {
     PrayerTimes prayerTimes = PrayerTimes(coordinates: coordinates, date: date, calculationParameters: params);
 
     setState(() {
-      fajrTime = tz.TZDateTime.from(prayerTimes.fajr!, location);
-      dhuhrTime = tz.TZDateTime.from(prayerTimes.dhuhr!, location);
-      asrTime = tz.TZDateTime.from(prayerTimes.asr!, location);
-      maghribTime = tz.TZDateTime.from(prayerTimes.maghrib!, location);
-      ishaTime = tz.TZDateTime.from(prayerTimes.isha!, location);
+      prayerModel.fajrTime = tz.TZDateTime.from(prayerTimes.fajr!, location);
+      prayerModel.dhuhrTime = tz.TZDateTime.from(prayerTimes.dhuhr!, location);
+      prayerModel.asrTime = tz.TZDateTime.from(prayerTimes.asr!, location);
+      prayerModel.maghribTime = tz.TZDateTime.from(prayerTimes.maghrib!, location);
+      prayerModel.ishaTime = tz.TZDateTime.from(prayerTimes.isha!, location);
       DateTime nextTime;
       String prayerName;
 
-      if (date.isBefore(fajrTime!)) {
+      if (date.isBefore(prayerModel.fajrTime!)) {
         prayerName = "Fajr";
-        nextTime = fajrTime!;
-      } else if (date.isBefore(dhuhrTime!)) {
+        nextTime = prayerModel.fajrTime!;
+      } else if (date.isBefore(prayerModel.dhuhrTime!)) {
         prayerName = "Dhuhr";
-        nextTime = dhuhrTime!;
-      } else if (date.isBefore(asrTime!)) {
+        nextTime = prayerModel.dhuhrTime!;
+      } else if (date.isBefore(prayerModel.asrTime!)) {
         prayerName = "Asr";
-        nextTime = asrTime!;
-      } else if (date.isBefore(maghribTime!)) {
+        nextTime = prayerModel.asrTime!;
+      } else if (date.isBefore(prayerModel.maghribTime!)) {
         prayerName = "Maghrib";
-        nextTime = maghribTime!;
-      } else if (date.isBefore(ishaTime!)) {
+        nextTime = prayerModel.maghribTime!;
+      } else if (date.isBefore(prayerModel.ishaTime!)) {
         prayerName = "Isha";
-        nextTime = ishaTime!;
+        nextTime = prayerModel.ishaTime!;
       } else {
         prayerName = "Fajr";
-        nextTime = fajrTime!.add(const Duration(days: 1));
+        nextTime = prayerModel.fajrTime!.add(const Duration(days: 1));
       }
 
       Duration remaining = nextTime.difference(date);
@@ -235,7 +230,12 @@ class _HomePageState extends State<HomePage> {
                             flex: 1,
                             child: ElevatedButton(
                               style: Theme.of(context).elevatedButtonTheme.style,
-                              onPressed: () async {},
+                              onPressed: () async {
+                                List<PendingNotificationRequest> list = await NotificationService.getPendingNotifications();
+                                for(var data in list){
+                                  print(data.id);
+                                }
+                              },
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -272,11 +272,11 @@ class _HomePageState extends State<HomePage> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                Text(DateFormat('HH:mm').format(fajrTime!), style: Theme.of(context).textTheme.bodyMedium),
-                                Text(DateFormat('HH:mm').format(dhuhrTime!), style: Theme.of(context).textTheme.bodyMedium),
-                                Text(DateFormat('HH:mm').format(asrTime!), style: Theme.of(context).textTheme.bodyMedium),
-                                Text(DateFormat('HH:mm').format(maghribTime!), style: Theme.of(context).textTheme.bodyMedium),
-                                Text(DateFormat('HH:mm').format(ishaTime!), style: Theme.of(context).textTheme.bodyMedium),
+                                Text(DateFormat('HH:mm').format(prayerModel.fajrTime!), style: Theme.of(context).textTheme.bodyMedium),
+                                Text(DateFormat('HH:mm').format(prayerModel.dhuhrTime!), style: Theme.of(context).textTheme.bodyMedium),
+                                Text(DateFormat('HH:mm').format(prayerModel.asrTime!), style: Theme.of(context).textTheme.bodyMedium),
+                                Text(DateFormat('HH:mm').format(prayerModel.maghribTime!), style: Theme.of(context).textTheme.bodyMedium),
+                                Text(DateFormat('HH:mm').format(prayerModel.ishaTime!), style: Theme.of(context).textTheme.bodyMedium),
                               ],
                             ),
                             const SizedBox(width: 10),
@@ -284,41 +284,20 @@ class _HomePageState extends State<HomePage> {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 GestureDetector(
-                                    onTap: (){
-                                      setState(() {
-                                        fajrNotif = !fajrNotif;
-                                      });
-                                    },
-                                    child: !fajrNotif ? Icon(Icons.notifications_active_outlined, size: 20) : Icon(Icons.notifications_off_outlined, size: 20)),
+                                    onTap: () => toggleNotification("Fajr", prayerModel.fajrTime!, 1),
+                                    child: !prayerModel.fajrNotif ? Icon(Icons.notifications_active_outlined, size: 20) : Icon(Icons.notifications_off_outlined, size: 20)),
                                 GestureDetector(
-                                    onTap: (){
-                                      setState(() {
-                                        dhuhrNotif = !dhuhrNotif;
-                                      });
-                                    },
-                                    child: !dhuhrNotif ? Icon(Icons.notifications_active_outlined, size: 20) : Icon(Icons.notifications_off_outlined, size: 20)),
+                                    onTap: () => toggleNotification("Dhuhr", prayerModel.dhuhrTime!, 2),
+                                    child: !prayerModel.dhuhrNotif ? Icon(Icons.notifications_active_outlined, size: 20) : Icon(Icons.notifications_off_outlined, size: 20)),
                                 GestureDetector(
-                                    onTap: (){
-                                      setState(() {
-                                        asrNotif = !asrNotif;
-                                      });
-                                    },
-                                    child: !asrNotif ? Icon(Icons.notifications_active_outlined, size: 20) : Icon(Icons.notifications_off_outlined, size: 20)),
+                                    onTap: () => toggleNotification("Asr", prayerModel.asrTime!, 3),
+                                    child: !prayerModel.asrNotif ? Icon(Icons.notifications_active_outlined, size: 20) : Icon(Icons.notifications_off_outlined, size: 20)),
                                 GestureDetector(
-                                    onTap: (){
-                                      setState(() {
-                                        maghribNotif = !maghribNotif;
-                                      });
-                                    },
-                                    child: !maghribNotif ? Icon(Icons.notifications_active_outlined, size: 20) : Icon(Icons.notifications_off_outlined, size: 20)),
+                                    onTap: () => toggleNotification("Maghrib", prayerModel.maghribTime!, 4),
+                                    child: !prayerModel.maghribNotif ? Icon(Icons.notifications_active_outlined, size: 20) : Icon(Icons.notifications_off_outlined, size: 20)),
                                 GestureDetector(
-                                    onTap: (){
-                                      setState(() {
-                                        ishaNotif = !ishaNotif;
-                                      });
-                                    },
-                                    child: !ishaNotif ? Icon(Icons.notifications_active_outlined, size: 20) : Icon(Icons.notifications_off_outlined, size: 20)),
-
+                                    onTap: () => toggleNotification("Isha", prayerModel.ishaTime!, 5),
+                                    child: !prayerModel.ishaNotif ? Icon(Icons.notifications_active_outlined, size: 20) : Icon(Icons.notifications_off_outlined, size: 20)),
                               ],
                             ),
                           ],
@@ -468,11 +447,11 @@ class _HomePageState extends State<HomePage> {
         "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
 
     final times = {
-      "fajr": fajrTime,
-      "dhuhr": dhuhrTime,
-      "asr": asrTime,
-      "maghrib": maghribTime,
-      "isha": ishaTime,
+      "fajr": prayerModel.fajrTime,
+      "dhuhr": prayerModel.dhuhrTime,
+      "asr": prayerModel.asrTime,
+      "maghrib": prayerModel.maghribTime,
+      "isha": prayerModel.ishaTime,
     };
 
     final currentPrayer = getCurrentTracker(today, times);
@@ -539,11 +518,11 @@ class _HomePageState extends State<HomePage> {
         "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
 
     final times = {
-      "fajr": fajrTime,
-      "dhuhr": dhuhrTime,
-      "asr": asrTime,
-      "maghrib": maghribTime,
-      "isha": ishaTime,
+      "fajr": prayerModel.fajrTime,
+      "dhuhr": prayerModel.dhuhrTime,
+      "asr": prayerModel.asrTime,
+      "maghrib": prayerModel.maghribTime,
+      "isha": prayerModel.ishaTime,
     };
 
     final currentPrayer = getCurrentTracker(now, times);
@@ -556,8 +535,6 @@ class _HomePageState extends State<HomePage> {
         .set({
       currentPrayer: 1,
     }, SetOptions(merge: true));
-
-    print("Updated $currentPrayer for $dateString ✅");
   }
 
   String getCurrentTracker(DateTime now, Map<String, DateTime?> times) {
@@ -576,6 +553,120 @@ class _HomePageState extends State<HomePage> {
       }
     }
     return currentPrayer;
+  }
+
+  void toggleNotification(String prayerName, DateTime time, int id) async {
+    setState(() {
+      switch (id) {
+        case 1: prayerModel.fajrNotif = !prayerModel.fajrNotif; PrefsService.savePrayerPrefs("fajr_notif", prayerModel.fajrNotif); break;
+        case 2: prayerModel.dhuhrNotif = !prayerModel.dhuhrNotif; PrefsService.savePrayerPrefs("dhuhr_notif", prayerModel.dhuhrNotif); break;
+        case 3: prayerModel.asrNotif = !prayerModel.asrNotif; PrefsService.savePrayerPrefs("asr_notif", prayerModel.asrNotif); break;
+        case 4: prayerModel.maghribNotif = !prayerModel.maghribNotif; PrefsService.savePrayerPrefs("maghrib_notif", prayerModel.maghribNotif); break;
+        case 5: prayerModel.ishaNotif = !prayerModel.ishaNotif; PrefsService.savePrayerPrefs("isha_notif", prayerModel.ishaNotif); break;
+      }
+    });
+
+    if ((prayerModel.fajrNotif && id == 1) ||
+        (prayerModel.dhuhrNotif && id == 2) ||
+        (prayerModel.asrNotif && id == 3) ||
+        (prayerModel.maghribNotif && id == 4) ||
+        (prayerModel.ishaNotif && id == 5)) {
+      // Schedule notification
+      NotificationService.scheduleNotification(
+        id: id,
+        title: "Prayer Reminder",
+        body: "$prayerName prayer will start in 5 minutes at ${DateFormat.Hm().format(time)}.",
+        scheduledTime: time,
+      );
+    } else {
+      // Cancel notification
+      final plugin = FlutterLocalNotificationsPlugin();
+      await plugin.cancel(id);
+    }
+  }
+
+  Future<void> loadPrefs() async {
+    prayerModel.fajrNotif = await PrefsService.getPrayerPrefs("fajr_notif");
+    prayerModel.dhuhrNotif = await PrefsService.getPrayerPrefs("dhuhr_notif");
+    prayerModel.asrNotif = await PrefsService.getPrayerPrefs("asr_notif");
+    prayerModel.maghribNotif = await PrefsService.getPrayerPrefs("maghrib_notif");
+    prayerModel.ishaNotif = await PrefsService.getPrayerPrefs("isha_notif");
+    setState(() {});
+
+    if (prayerModel.fajrTime != null &&
+        prayerModel.dhuhrTime != null &&
+        prayerModel.asrTime != null &&
+        prayerModel.maghribTime != null &&
+        prayerModel.ishaTime != null) {
+      _rescheduleActiveNotifications();
+    }
+  }
+
+
+
+  Future<void> _rescheduleActiveNotifications() async {
+    DateTime adjustIfPast(DateTime time) {
+      final now = DateTime.now();
+      if (time.isBefore(now)) {
+        return time.add(const Duration(days: 1)); // schedule for tomorrow
+      }
+      return time;
+    }
+
+    if (prayerModel.fajrTime != null && prayerModel.fajrNotif) {
+      NotificationService.scheduleNotification(
+        id: 1,
+        title: "Prayer Reminder",
+        body: "Fajr prayer will start in 5 minutes at ${DateFormat.Hm().format(prayerModel.fajrTime!)}.",
+        scheduledTime: adjustIfPast(prayerModel.fajrTime!),
+      );
+
+      NotificationService.logNotification(adjustIfPast(prayerModel.fajrTime!), 1, true);
+    }
+
+    if (prayerModel.dhuhrTime != null && prayerModel.dhuhrNotif) {
+      NotificationService.scheduleNotification(
+        id: 2,
+        title: "Prayer Reminder",
+        body: "Dhuhr prayer will start in 5 minutes at ${DateFormat.Hm().format(prayerModel.dhuhrTime!)}.",
+        scheduledTime: adjustIfPast(prayerModel.dhuhrTime!),
+      );
+
+      NotificationService.logNotification(adjustIfPast(prayerModel.dhuhrTime!), 2, true);
+    }
+
+    if (prayerModel.asrTime != null && prayerModel.asrNotif) {
+      NotificationService.scheduleNotification(
+        id: 3,
+        title: "Prayer Reminder",
+        body: "Asr prayer will start in 5 minutes at ${DateFormat.Hm().format(prayerModel.asrTime!)}.",
+        scheduledTime: adjustIfPast(prayerModel.asrTime!),
+      );
+
+      NotificationService.logNotification(adjustIfPast(prayerModel.asrTime!), 3, true);
+    }
+
+    if (prayerModel.maghribTime != null && prayerModel.maghribNotif) {
+      NotificationService.scheduleNotification(
+        id: 4,
+        title: "Prayer Reminder",
+        body: "Maghrib prayer will start in 5 minutes at ${DateFormat.Hm().format(prayerModel.maghribTime!)}.",
+        scheduledTime: adjustIfPast(prayerModel.maghribTime!),
+      );
+
+      NotificationService.logNotification(adjustIfPast(prayerModel.maghribTime!), 4, true);
+    }
+
+    if (prayerModel.ishaTime != null && prayerModel.ishaNotif) {
+      NotificationService.scheduleNotification(
+        id: 5,
+        title: "Prayer Reminder",
+        body: "Isha prayer will start in 5 minutes at ${DateFormat.Hm().format(prayerModel.ishaTime!)}.",
+        scheduledTime: adjustIfPast(prayerModel.ishaTime!),
+      );
+
+      NotificationService.logNotification(adjustIfPast(prayerModel.ishaTime!), 5, true);
+    }
   }
 }
 

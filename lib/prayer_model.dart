@@ -4,6 +4,16 @@ class PrayerModel {
   final int asr;
   final int maghrib;
   final int isha;
+  bool fajrNotif;
+  bool dhuhrNotif;
+  bool asrNotif;
+  bool maghribNotif;
+  bool ishaNotif;
+  DateTime? fajrTime;
+  DateTime? dhuhrTime;
+  DateTime? asrTime;
+  DateTime? maghribTime;
+  DateTime? ishaTime;
 
   PrayerModel({
     this.fajr = 0,
@@ -11,6 +21,16 @@ class PrayerModel {
     this.asr = 0,
     this.maghrib = 0,
     this.isha = 0,
+    this.fajrNotif = false,
+    this.dhuhrNotif = false,
+    this.asrNotif = false,
+    this.maghribNotif = false,
+    this.ishaNotif = false,
+    this.fajrTime,
+    this.dhuhrTime,
+    this.asrTime,
+    this.maghribTime,
+    this.ishaTime,
   });
 
   Map<String, dynamic> toMap() {
@@ -30,6 +50,21 @@ class PrayerModel {
       asr: map['asr'] ?? 0,
       maghrib: map['maghrib'] ?? 0,
       isha: map['isha'] ?? 0,
+    );
+  }
+
+  factory PrayerModel.empty() {
+    return PrayerModel(
+      fajr : 0,
+      dhuhr : 0,
+      asr : 0,
+      maghrib : 0,
+      isha : 0,
+      fajrNotif : false,
+      dhuhrNotif : false,
+      asrNotif : false,
+      maghribNotif : false,
+      ishaNotif : false,
     );
   }
 }
