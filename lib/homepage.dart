@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:lat_lng_to_timezone/lat_lng_to_timezone.dart' as tzmap;
 import 'package:page_transition/page_transition.dart';
 import 'package:shalat_essential/colors.dart';
+import 'package:shalat_essential/compass.dart';
 import 'package:shalat_essential/login.dart';
 import 'package:shalat_essential/prayer_model.dart';
 import 'package:shalat_essential/prefs_service.dart';
@@ -231,10 +232,7 @@ class _HomePageState extends State<HomePage> {
                             child: ElevatedButton(
                               style: Theme.of(context).elevatedButtonTheme.style,
                               onPressed: () async {
-                                List<PendingNotificationRequest> list = await NotificationService.getPendingNotifications();
-                                for(var data in list){
-                                  print(data.id);
-                                }
+                                showPreviewDialog();
                               },
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -667,6 +665,42 @@ class _HomePageState extends State<HomePage> {
 
       NotificationService.logNotification(adjustIfPast(prayerModel.ishaTime!), 5, true);
     }
+  }
+
+  showPreviewDialog() async {
+
+    return showDialog(
+        context: context,
+        builder: (context) => Dialog(
+            insetPadding: EdgeInsets.all(10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: AppColors.background
+              ),
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Spacer(),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Icon(Icons.close),
+                      )
+                    ],
+                  ),
+                  Text('Qibla Compass', style: Theme.of(context).textTheme.headlineMedium),
+                  SizedBox(height: 10,),
+                  Compass(),
+                  SizedBox(height: 10,),
+                ],
+              ),
+            )));
   }
 }
 
