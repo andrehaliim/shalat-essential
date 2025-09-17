@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:intl/intl.dart';
 import 'package:lat_lng_to_timezone/lat_lng_to_timezone.dart' as tzmap;
 import 'package:page_transition/page_transition.dart';
@@ -148,6 +149,13 @@ class _HomePageState extends State<HomePage> {
 
       nextPrayer = prayerName;
       nextPrayerTime = "in ${hours}h ${minutes}m";
+      updatePrayerWidget(
+          fajr: tz.TZDateTime.from(prayerTimes.fajr!, location),
+          dhuhr:  tz.TZDateTime.from(prayerTimes.dhuhr!, location),
+          asr:  tz.TZDateTime.from(prayerTimes.asr!, location),
+          maghrib:  tz.TZDateTime.from(prayerTimes.maghrib!, location),
+          isha:  tz.TZDateTime.from(prayerTimes.isha!, location)
+      );
     });
   }
 
@@ -701,6 +709,24 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             )));
+  }
+
+  Future<void> updatePrayerWidget({
+    required DateTime fajr,
+    required DateTime dhuhr,
+    required DateTime asr,
+    required DateTime maghrib,
+    required DateTime isha,
+  }) async {
+    await HomeWidget.saveWidgetData<String>('fajr_time', DateFormat('HH:mm').format(fajr));
+    await HomeWidget.saveWidgetData<String>('dhuhr_time', DateFormat('HH:mm').format(dhuhr));
+    await HomeWidget.saveWidgetData<String>('asr_time', DateFormat('HH:mm').format(asr));
+    await HomeWidget.saveWidgetData<String>('maghrib_time', DateFormat('HH:mm').format(maghrib));
+    await HomeWidget.saveWidgetData<String>('isha_time', DateFormat('HH:mm').format(isha));
+
+    await HomeWidget.updateWidget(
+      name: 'PrayerWidgetProvider',
+    );
   }
 }
 

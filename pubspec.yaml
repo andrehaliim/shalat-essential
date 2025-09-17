@@ -29,6 +29,7 @@ dependencies:
   flutter_local_notifications: ^19.4.1
   shared_preferences: ^2.5.3
   flutter_compass: ^0.8.1
+  home_widget: ^0.8.0
 
 dev_dependencies:
   flutter_test:
