@@ -171,6 +171,7 @@ class _HomePageState extends State<HomePage> {
         nickname = null;
         todayPrayer = null;
         yesterdayPrayer = null;
+        updateWidgetPrayerTracker(prayerModel: null);
       });
     }
   }
