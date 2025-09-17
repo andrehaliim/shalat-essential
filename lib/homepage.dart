@@ -90,14 +90,16 @@ class _HomePageState extends State<HomePage> {
     final latitude = position.latitude;
     final longitude = position.longitude;
 
+    await setLocaleIdentifier("en_US");
     List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
     if (placemarks.isNotEmpty) {
       final place = placemarks.first;
-      String location = '${place.locality}, ${place.subAdministrativeArea}, ${place.administrativeArea}';
+      String location = '${place.subAdministrativeArea}, ${place.administrativeArea}, ${place.country}';
       print('----- coordinate is latitude : $latitude | longitude : $longitude -----');
       print('----- location name is $location -----');
       setState(() {
         locationName = location;
+        updateWidgetLocation(location: location);
       });
     }
   }
@@ -392,7 +394,7 @@ class _HomePageState extends State<HomePage> {
                                 setState(() {
                                   isLoadingTracker = true;
                                 });
-                                await trackPrayer(user.uid);
+                                await trackPrayer(context, user.uid);
                                 setState(() {
                                   isLoadingTracker = false;
                                 });
@@ -438,10 +440,10 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> trackPrayer(String userId) async {
+  Future<void> trackPrayer(BuildContext context, String userId) async {
     final todayDoc = await getTracker(userId);
     if (todayDoc['today'] != null) {
-      await updateTracker(userId);
+      await updateTracker(context, userId);
     } else {
       await createTracker(userId);
     }
@@ -518,7 +520,7 @@ class _HomePageState extends State<HomePage> {
     };
   }
 
-  Future<void> updateTracker(String userId) async {
+  Future<void> updateTracker(BuildContext context, String userId) async {
     final now = DateTime.now();
 
     final dateString =
@@ -534,15 +536,32 @@ class _HomePageState extends State<HomePage> {
 
     final currentPrayer = getCurrentTracker(now, times);
 
-    await FirebaseFirestore.instance
+    final docRef = FirebaseFirestore.instance
         .collection('tracker')
         .doc(userId)
         .collection('prayer')
-        .doc(dateString)
-        .set({
+        .doc(dateString);
+
+    final docSnap = await docRef.get();
+
+    if (docSnap.exists && docSnap.data()?[currentPrayer] == 1) {
+      // Already tracked
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Already tracked prayer")),
+      );
+      return;
+    }
+
+    // Not tracked yet → update
+    await docRef.set({
       currentPrayer: 1,
     }, SetOptions(merge: true));
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("$currentPrayer tracked successfully")),
+    );
   }
+
 
   String getCurrentTracker(DateTime now, Map<String, DateTime?> times) {
     final orderedPrayers = [
@@ -730,19 +749,14 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Future<void> updateWidgetPrayerNotification({
-    required String name,
-    required bool notification,
-  }) async {
+  Future<void> updateWidgetPrayerNotification({required String name,required bool notification}) async {
     await HomeWidget.saveWidgetData<bool>('${name.toLowerCase()}_notification', notification);
     await HomeWidget.updateWidget(
       name: 'PrayerWidgetProvider',
     );
   }
 
-  Future<void> updateWidgetPrayerTracker({
-    required PrayerModel? prayerModel,
-  }) async {
+  Future<void> updateWidgetPrayerTracker({required PrayerModel? prayerModel}) async {
     if(prayerModel != null){
       await HomeWidget.saveWidgetData<bool>('fajr_check', prayerModel.fajr == 1 ? true : false);
       await HomeWidget.saveWidgetData<bool>('dhuhr_check', prayerModel.dhuhr == 1 ? true : false);
@@ -757,6 +771,13 @@ class _HomePageState extends State<HomePage> {
       await HomeWidget.saveWidgetData<bool>('isha_check', false);
     }
 
+    await HomeWidget.updateWidget(
+      name: 'PrayerWidgetProvider',
+    );
+  }
+
+  Future<void> updateWidgetLocation({required String location}) async {
+    await HomeWidget.saveWidgetData<String>('location_name', location);
     await HomeWidget.updateWidget(
       name: 'PrayerWidgetProvider',
     );

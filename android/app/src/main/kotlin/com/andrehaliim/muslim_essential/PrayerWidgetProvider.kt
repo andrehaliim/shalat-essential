@@ -18,6 +18,9 @@ class PrayerWidgetProvider : AppWidgetProvider() {
 
             val prefs = HomeWidgetPlugin.getData(context)
 
+            // Location
+            views.setTextViewText(R.id.location_name, prefs.getString("location_name", ""))
+
             // Prayer times
             views.setTextViewText(R.id.fajr_time, prefs.getString("fajr_time", "--:--"))
             views.setTextViewText(R.id.dhuhr_time, prefs.getString("dhuhr_time", "--:--"))
