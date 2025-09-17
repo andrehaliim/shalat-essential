@@ -58,7 +58,9 @@ class _CompassState extends State<Compass> {
     }
 
     final pos = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.best,
+      locationSettings: LocationSettings(
+        accuracy: LocationAccuracy.best
+      )
     );
     _updateBearing(pos);
 
@@ -95,6 +97,24 @@ class _CompassState extends State<Compass> {
     return bearing;
   }
 
+  double? _lastAngle;
+
+  double _normalizeAngle(double newAngle) {
+    if (_lastAngle == null) {
+      _lastAngle = newAngle;
+      return newAngle;
+    }
+
+    double delta = newAngle - _lastAngle!;
+
+    // Wrap delta into [-π, π] to avoid long spins
+    if (delta > math.pi) delta -= 2 * math.pi;
+    if (delta < -math.pi) delta += 2 * math.pi;
+
+    _lastAngle = _lastAngle! + delta;
+    return _lastAngle!;
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<CompassEvent>(
@@ -106,9 +126,10 @@ class _CompassState extends State<Compass> {
         final canCompute = _bearingToQibla != null && hasSensor;
 
         final diffDegrees = canCompute
-            ? ((_bearingToQibla! - heading!) + 360.0) % 360.0
+            ? ((_bearingToQibla! - heading) + 360.0) % 360.0
             : 0.0;
         final diffRadians = diffDegrees * math.pi / 180.0;
+        final smoothedAngle = _normalizeAngle(diffRadians);
 
         return AspectRatio(
           aspectRatio: 1,
@@ -122,11 +143,18 @@ class _CompassState extends State<Compass> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
               ),
-              child: Transform.rotate(
-                angle: diffRadians,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: 0, end: smoothedAngle),
+                duration: const Duration(milliseconds: 300),
+                builder: (context, angle, child) {
+                  return Transform.rotate(
+                    angle: angle,
+                    child: child,
+                  );
+                },
                 child: Image.asset('assets/compass.png'),
               ),
-            ),
+          ),
           )
         );
       },
