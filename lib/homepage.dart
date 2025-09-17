@@ -149,7 +149,7 @@ class _HomePageState extends State<HomePage> {
 
       nextPrayer = prayerName;
       nextPrayerTime = "in ${hours}h ${minutes}m";
-      updatePrayerWidget(
+      updateWidgetPrayerTime(
           fajr: tz.TZDateTime.from(prayerTimes.fajr!, location),
           dhuhr:  tz.TZDateTime.from(prayerTimes.dhuhr!, location),
           asr:  tz.TZDateTime.from(prayerTimes.asr!, location),
@@ -509,6 +509,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       todayPrayer = todayDoc.exists ? PrayerModel.fromMap(todayDoc.data()!) : null;
       yesterdayPrayer = yesterdayDoc.exists ? PrayerModel.fromMap(yesterdayDoc.data()!) : null;
+      updateWidgetPrayerTracker(prayerModel: todayDoc.exists ? PrayerModel.fromMap(todayDoc.data()!) : null);
     });
 
     return {
@@ -584,10 +585,12 @@ class _HomePageState extends State<HomePage> {
         body: "$prayerName prayer will start in 5 minutes at ${DateFormat.Hm().format(time)}.",
         scheduledTime: time,
       );
+      updateWidgetPrayerNotification(name: prayerName, notification: true);
     } else {
       // Cancel notification
       final plugin = FlutterLocalNotificationsPlugin();
       await plugin.cancel(id);
+      updateWidgetPrayerNotification(name: prayerName, notification: false);
     }
   }
 
@@ -607,8 +610,6 @@ class _HomePageState extends State<HomePage> {
       _rescheduleActiveNotifications();
     }
   }
-
-
 
   Future<void> _rescheduleActiveNotifications() async {
     DateTime adjustIfPast(DateTime time) {
@@ -711,7 +712,7 @@ class _HomePageState extends State<HomePage> {
             )));
   }
 
-  Future<void> updatePrayerWidget({
+  Future<void> updateWidgetPrayerTime({
     required DateTime fajr,
     required DateTime dhuhr,
     required DateTime asr,
@@ -723,6 +724,38 @@ class _HomePageState extends State<HomePage> {
     await HomeWidget.saveWidgetData<String>('asr_time', DateFormat('HH:mm').format(asr));
     await HomeWidget.saveWidgetData<String>('maghrib_time', DateFormat('HH:mm').format(maghrib));
     await HomeWidget.saveWidgetData<String>('isha_time', DateFormat('HH:mm').format(isha));
+
+    await HomeWidget.updateWidget(
+      name: 'PrayerWidgetProvider',
+    );
+  }
+
+  Future<void> updateWidgetPrayerNotification({
+    required String name,
+    required bool notification,
+  }) async {
+    await HomeWidget.saveWidgetData<bool>('${name.toLowerCase()}_notification', notification);
+    await HomeWidget.updateWidget(
+      name: 'PrayerWidgetProvider',
+    );
+  }
+
+  Future<void> updateWidgetPrayerTracker({
+    required PrayerModel? prayerModel,
+  }) async {
+    if(prayerModel != null){
+      await HomeWidget.saveWidgetData<bool>('fajr_check', prayerModel.fajr == 1 ? true : false);
+      await HomeWidget.saveWidgetData<bool>('dhuhr_check', prayerModel.dhuhr == 1 ? true : false);
+      await HomeWidget.saveWidgetData<bool>('asr_check', prayerModel.asr == 1 ? true : false);
+      await HomeWidget.saveWidgetData<bool>('maghrib_check', prayerModel.maghrib == 1 ? true : false);
+      await HomeWidget.saveWidgetData<bool>('isha_check', prayerModel.isha == 1 ? true : false);
+    } else {
+      await HomeWidget.saveWidgetData<bool>('fajr_check', false);
+      await HomeWidget.saveWidgetData<bool>('dhuhr_check',false);
+      await HomeWidget.saveWidgetData<bool>('asr_check', false);
+      await HomeWidget.saveWidgetData<bool>('maghrib_check', false);
+      await HomeWidget.saveWidgetData<bool>('isha_check', false);
+    }
 
     await HomeWidget.updateWidget(
       name: 'PrayerWidgetProvider',
