@@ -59,6 +59,7 @@ class _HomePageState extends State<HomePage> {
         _lastTime = now;
       }
     });
+    loadPrefs();
   }
 
   @override
@@ -76,7 +77,6 @@ class _HomePageState extends State<HomePage> {
     final position = await determinePosition();
     await getLocationName(position);
     await getShalatData(position);
-    await loadPrefs();
     if(user != null) {
       loadNickname();
       getTracker(user.uid);
@@ -744,6 +744,8 @@ class _HomePageState extends State<HomePage> {
     await HomeWidget.saveWidgetData<String>('asr_time', DateFormat('HH:mm').format(asr));
     await HomeWidget.saveWidgetData<String>('maghrib_time', DateFormat('HH:mm').format(maghrib));
     await HomeWidget.saveWidgetData<String>('isha_time', DateFormat('HH:mm').format(isha));
+
+    await HomeWidget.saveWidgetData<String>('date_time', DateFormat('dd MMMM yyyy').format(DateTime.now()));
 
     await HomeWidget.updateWidget(
       name: 'PrayerWidgetProvider',

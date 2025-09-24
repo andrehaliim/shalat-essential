@@ -19,7 +19,7 @@ class PrayerWidgetProvider : AppWidgetProvider() {
             val prefs = HomeWidgetPlugin.getData(context)
 
             // Location
-            views.setTextViewText(R.id.location_name, prefs.getString("location_name", ""))
+            views.setTextViewText(R.id.location_name, prefs.getString("location_name", "-"))
 
             // Prayer times
             views.setTextViewText(R.id.fajr_time, prefs.getString("fajr_time", "--:--"))
@@ -89,6 +89,9 @@ class PrayerWidgetProvider : AppWidgetProvider() {
                 R.id.isha_check,
                 if (ishaCheck) R.drawable.ic_check_circle else R.drawable.ic_circle_outline
             )
+
+            //Date
+            views.setTextViewText(R.id.date, prefs.getString("date_time", "-"))
 
             // Click action to open Flutter app
             val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
