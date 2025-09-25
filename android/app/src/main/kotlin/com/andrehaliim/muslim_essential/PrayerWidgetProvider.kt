@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
+import android.content.Intent
 import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetPlugin
 
@@ -102,6 +103,22 @@ class PrayerWidgetProvider : AppWidgetProvider() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
             views.setOnClickPendingIntent(R.id.prayer_widget_root, pendingIntent)
+
+            // Intent to launch Qibla Compass
+            val qiblaIntent = Intent(context, MainActivity::class.java).apply {
+                action = Intent.ACTION_MAIN
+                addCategory(Intent.CATEGORY_LAUNCHER)
+                putExtra("fromWidget", "qibla")
+            }
+
+            val qiblaPendingIntent = PendingIntent.getActivity(
+                context,
+                0,
+                qiblaIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            views.setOnClickPendingIntent(R.id.qibla_button, qiblaPendingIntent)
 
             appWidgetManager.updateAppWidget(widgetId, views)
         }

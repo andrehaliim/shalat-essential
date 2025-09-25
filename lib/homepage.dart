@@ -19,6 +19,7 @@ import 'package:shalat_essential/prefs_service.dart';
 import 'package:shalat_essential/rotating_dot.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:receive_intent/receive_intent.dart' as receive_intent;
 
 import 'get_location.dart';
 import 'notification_service.dart';
@@ -45,6 +46,7 @@ class _HomePageState extends State<HomePage> {
   DateTime todayDate = DateTime.now();
   DateTime yesterdayDate = DateTime.now().subtract(const Duration(days: 1));
   PrayerModel prayerModel = PrayerModel.empty();
+  StreamSubscription<receive_intent.Intent?>? _intentSub;
 
   @override
   void initState() {
@@ -60,11 +62,13 @@ class _HomePageState extends State<HomePage> {
       }
     });
     loadPrefs();
+    _listenForIntents();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _intentSub?.cancel();
     super.dispose();
   }
 
@@ -83,6 +87,28 @@ class _HomePageState extends State<HomePage> {
     }
     setState(() {
       isGetLocation = false;
+    });
+  }
+
+
+  void _listenForIntents() async {
+    final initialIntent = await receive_intent.ReceiveIntent.getInitialIntent();
+    if (initialIntent?.extra?['fromWidget'] == 'qibla') {
+      _showSnackbar();
+    }
+
+    _intentSub = receive_intent.ReceiveIntent.receivedIntentStream.listen((intent) {
+      if (intent!.extra?['fromWidget'] == 'qibla') {
+        _showSnackbar();
+      }
+    });
+  }
+
+  void _showSnackbar() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        showPreviewDialog();
+      }
     });
   }
 
@@ -726,7 +752,7 @@ class _HomePageState extends State<HomePage> {
                   Text('Qibla Compass', style: Theme.of(context).textTheme.headlineMedium),
                   SizedBox(height: 10,),
                   Compass(),
-                  SizedBox(height: 10,),
+                  SizedBox(height: 50,),
                 ],
               ),
             )));
