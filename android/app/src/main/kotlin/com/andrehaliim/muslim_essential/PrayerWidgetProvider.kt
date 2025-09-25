@@ -113,7 +113,7 @@ class PrayerWidgetProvider : AppWidgetProvider() {
 
             val qiblaPendingIntent = PendingIntent.getActivity(
                 context,
-                0,
+                1,
                 qiblaIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
@@ -129,7 +129,7 @@ class PrayerWidgetProvider : AppWidgetProvider() {
 
             val trackerPendingIntent = PendingIntent.getActivity(
                 context,
-                0,
+                2,
                 trackerIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )

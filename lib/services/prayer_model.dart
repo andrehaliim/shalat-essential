@@ -1,3 +1,6 @@
+import 'package:adhan_dart/adhan_dart.dart';
+import 'package:timezone/timezone.dart' as tz;
+
 class PrayerModel {
   final int fajr;
   final int dhuhr;
@@ -67,4 +70,12 @@ class PrayerModel {
       ishaNotif : false,
     );
   }
+}
+
+class PrayerResult {
+  final PrayerTimes prayerTimes;
+  final tz.Location location;
+  final DateTime dateTime;
+
+  PrayerResult({required this.prayerTimes, required this.location, required this.dateTime});
 }

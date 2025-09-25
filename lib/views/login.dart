@@ -1,18 +1,19 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:shalat_essential/rotating_dot.dart';
+import 'package:page_transition/page_transition.dart';
+import 'package:shalat_essential/components/rotating_dot.dart';
+import 'package:shalat_essential/services/colors.dart';
+import 'package:shalat_essential/views/register.dart';
 
-class Register extends StatefulWidget {
-  const Register({super.key});
+class Login extends StatefulWidget {
+  const Login({super.key});
 
   @override
-  State<Register> createState() => _RegisterState();
+  State<Login> createState() => _LoginState();
 }
 
-class _RegisterState extends State<Register> {
+class _LoginState extends State<Login> {
   final _formKey = GlobalKey<FormState>();
-  final nicknameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   bool obscurePassword = true;
@@ -25,48 +26,28 @@ class _RegisterState extends State<Register> {
     });
   }
 
-  Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => isLoading = true);
-
+  Future<void> doLogin() async {
     try {
-      final credential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
+      await auth.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
-
-      final user = credential.user;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Login successful")),
+      );
+      final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        await FirebaseFirestore.instance
-            .collection("users")
-            .doc(user.uid)
-            .set({
-          "nickname": nicknameController.text.trim(),
-          "email": emailController.text.trim(),
-          "createdAt": FieldValue.serverTimestamp(),
-        });
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Registration successful")),
-        );
-        Navigator.pop(context);
+        final idToken = await user.getIdToken(); // normal token
+        final idTokenResult = await user.getIdTokenResult(); // with extra info
+        print("Token: $idToken");
+        print("Expires at: ${idTokenResult.expirationTime}");
+        Navigator.pop(context,true);
       }
     } on FirebaseAuthException catch (e) {
-      String message = "An error occurred";
-      if (e.code == 'email-already-in-use') {
-        message = "Email already in use";
-      } else if (e.code == 'weak-password') {
-        message = "Password too weak";
-      }
+      print(e.message ?? '');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
+        SnackBar(content: Text(e.message ?? "Login failed")),
       );
-    } finally {
-      setState(() => isLoading = false);
     }
   }
 
@@ -93,43 +74,8 @@ class _RegisterState extends State<Register> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text('Register', style: Theme.of(context).primaryTextTheme.headlineMedium),
-                Text('Fullfill the form below', style: Theme.of(context).primaryTextTheme.labelLarge),
-                const SizedBox(height: 20),
-
-                // Email Label
-                SizedBox(
-                  width: screenWidth,
-                  child: Text('Nickname', style: Theme.of(context).primaryTextTheme.labelLarge, textAlign: TextAlign.start),
-                ),
-                const SizedBox(height: 5),
-
-                // Email Field
-                Material(
-                  elevation: 8,
-                  borderRadius: BorderRadius.circular(10),
-                  child: TextFormField(
-                    controller: nicknameController,
-                    keyboardType: TextInputType.emailAddress,
-                    style: const TextStyle(color: Colors.white),
-                    cursorColor: Colors.white,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Nickname cannot be empty';
-                      }
-                      return null;
-                    },
-                    decoration: InputDecoration(
-                      filled: true,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: Color(0xFF415A77), width: 1.5),
-                      ),
-                    ),
-                  ),
-                ),
-
+                Text('Log in now', style: Theme.of(context).primaryTextTheme.headlineMedium),
+                Text('Please login to track your prayer', style: Theme.of(context).primaryTextTheme.labelLarge),
                 const SizedBox(height: 20),
 
                 // Email Label
@@ -221,6 +167,13 @@ class _RegisterState extends State<Register> {
                   ),
                 ),
 
+                const SizedBox(height: 5),
+
+                SizedBox(
+                  width: screenWidth,
+                  child: Text('Forgot password', style: Theme.of(context).primaryTextTheme.bodyMedium, textAlign: TextAlign.end),
+                ),
+
                 const SizedBox(height: 40),
 
                 // Login Button
@@ -236,13 +189,42 @@ class _RegisterState extends State<Register> {
                         print("Password: ${passwordController.text}");
 
                         loginLoading();
-                        await _register();
+                        await doLogin();
                         loginLoading();
                       }
                     },
                     child: isLoading
                         ? RotatingDot()
-                        : Text('Register', style: Theme.of(context).primaryTextTheme.labelLarge),
+                        : Text('Login', style: Theme.of(context).primaryTextTheme.labelLarge),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+                Text('Don\'t have an account?', style: Theme.of(context).primaryTextTheme.bodyMedium),
+                const SizedBox(height: 20),
+
+                // Register Button
+                SizedBox(
+                  width: screenWidth,
+                  height: kMinInteractiveDimension,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      side: BorderSide(color: AppColors.borderColor, width: 2),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 0,
+                    ),
+                    onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        PageTransition(
+                          type: PageTransitionType.rightToLeft,
+                          childBuilder: (context) => Register(),
+                        ),
+                      );
+                    },
+                    child: const Text('Register'),
                   ),
                 ),
               ],
