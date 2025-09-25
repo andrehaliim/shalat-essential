@@ -120,6 +120,22 @@ class PrayerWidgetProvider : AppWidgetProvider() {
 
             views.setOnClickPendingIntent(R.id.qibla_button, qiblaPendingIntent)
 
+            // Intent to launch Set Tracker
+            val trackerIntent = Intent(context, MainActivity::class.java).apply {
+                action = Intent.ACTION_MAIN
+                addCategory(Intent.CATEGORY_LAUNCHER)
+                putExtra("fromWidget", "tracker")
+            }
+
+            val trackerPendingIntent = PendingIntent.getActivity(
+                context,
+                0,
+                trackerIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            views.setOnClickPendingIntent(R.id.track_button, trackerPendingIntent)
+
             appWidgetManager.updateAppWidget(widgetId, views)
         }
     }

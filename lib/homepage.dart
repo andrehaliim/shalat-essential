@@ -94,22 +94,42 @@ class _HomePageState extends State<HomePage> {
   void _listenForIntents() async {
     final initialIntent = await receive_intent.ReceiveIntent.getInitialIntent();
     if (initialIntent?.extra?['fromWidget'] == 'qibla') {
-      _showSnackbar();
+      showPreviewDialog();
+    } else if (initialIntent?.extra?['fromWidget'] == 'tracker'){
+      trackPrayerFunction();
     }
 
     _intentSub = receive_intent.ReceiveIntent.receivedIntentStream.listen((intent) {
       if (intent!.extra?['fromWidget'] == 'qibla') {
-        _showSnackbar();
+        showPreviewDialog();
+      } else if (intent.extra?['fromWidget'] == 'tracker') {
+        trackPrayerFunction();
       }
     });
   }
 
-  void _showSnackbar() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        showPreviewDialog();
+  void trackPrayerFunction() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      bool refresh = await Navigator.push(
+        context,
+        PageTransition(
+          type: PageTransitionType.rightToLeft,
+          childBuilder: (context) => Login(),
+        ),
+      );
+      if(refresh){
+        initAll();
       }
-    });
+    } else {
+      setState(() {
+        isLoadingTracker = true;
+      });
+      await trackPrayer(context, user.uid);
+      setState(() {
+        isLoadingTracker = false;
+      });
+    }
   }
 
   Future<void> getLocationName(Position position) async {
@@ -404,29 +424,7 @@ class _HomePageState extends State<HomePage> {
                           height: kMinInteractiveDimension,
                           child: ElevatedButton(
                             style: Theme.of(context).elevatedButtonTheme.style,
-                            onPressed: () async{
-                              final user = FirebaseAuth.instance.currentUser;
-                              if (user == null) {
-                                bool refresh = await Navigator.push(
-                                  context,
-                                  PageTransition(
-                                    type: PageTransitionType.rightToLeft,
-                                    childBuilder: (context) => Login(),
-                                  ),
-                                );
-                                if(refresh){
-                                  initAll();
-                                }
-                              } else {
-                                setState(() {
-                                  isLoadingTracker = true;
-                                });
-                                await trackPrayer(context, user.uid);
-                                setState(() {
-                                  isLoadingTracker = false;
-                                });
-                              }
-                            },
+                            onPressed: trackPrayerFunction,
                             child: isLoadingTracker
                                 ? RotatingDot()
                                 : Row(
