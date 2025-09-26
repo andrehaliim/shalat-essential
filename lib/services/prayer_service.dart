@@ -155,4 +155,16 @@ class PrayerService {
     }
     return currentPrayer;
   }
+
+  static Future<PrayerResult> getShalatDataBackground(double latitude, double longitude) async {
+    tzl.initializeTimeZones();
+    final location = tz.getLocation(tzmap.latLngToTimezoneString(latitude, longitude));
+    DateTime date = tz.TZDateTime.from(DateTime.now(), location);
+    Coordinates coordinates = Coordinates(latitude, longitude);
+    CalculationParameters params = CalculationMethod.singapore();
+    params.madhab = Madhab.shafi;
+    PrayerTimes prayerTimes = PrayerTimes(coordinates: coordinates, date: date, calculationParameters: params);
+
+    return PrayerResult(prayerTimes: prayerTimes, location: location, dateTime: date);
+  }
 }

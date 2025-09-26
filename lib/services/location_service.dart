@@ -1,5 +1,6 @@
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LocationService {
   Future<Position> determinePosition() async {
@@ -38,6 +39,10 @@ class LocationService {
       String location = '${place.subAdministrativeArea}, ${place.administrativeArea}, ${place.country}';
       print('----- coordinate is latitude : $latitude | longitude : $longitude -----');
       print('----- location name is $location -----');
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('location', location);
+      await prefs.setDouble('lat', latitude);
+      await prefs.setDouble('long', longitude);
       return location;
     } else {
       return '-';
