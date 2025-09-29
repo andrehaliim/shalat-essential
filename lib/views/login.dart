@@ -55,7 +55,7 @@ class _LoginState extends State<Login> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final screenWidth = size.width;
-    final screenHeight = size.height;
+    //final screenHeight = size.height;
 
     return PopScope(
       canPop: false,
@@ -65,7 +65,7 @@ class _LoginState extends State<Login> {
       },
       child: Scaffold(
         resizeToAvoidBottomInset: false,
-        appBar: AppBar(title: const Text('Muslim Essential')),
+        appBar: AppBar(title: const Text('Muslim Essential'), backgroundColor: AppColors.background, surfaceTintColor: Colors.transparent),
         body: Container(
           width: screenWidth,
           padding: const EdgeInsets.all(30),

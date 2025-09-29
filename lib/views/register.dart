@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shalat_essential/components/rotating_dot.dart';
+import 'package:shalat_essential/services/colors.dart';
 
 class Register extends StatefulWidget {
   const Register({super.key});
@@ -74,7 +75,7 @@ class _RegisterState extends State<Register> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final screenWidth = size.width;
-    final screenHeight = size.height;
+    //final screenHeight = size.height;
 
     return PopScope(
       canPop: false,
@@ -84,7 +85,7 @@ class _RegisterState extends State<Register> {
       },
       child: Scaffold(
         resizeToAvoidBottomInset: false,
-        appBar: AppBar(title: const Text('Muslim Essential')),
+        appBar: AppBar(title: const Text('Muslim Essential'), backgroundColor: AppColors.background, surfaceTintColor: Colors.transparent),
         body: Container(
           width: screenWidth,
           padding: const EdgeInsets.all(30),

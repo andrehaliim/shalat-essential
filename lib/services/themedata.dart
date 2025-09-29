@@ -11,8 +11,10 @@ final ThemeData appDarkTheme = ThemeData(
   textTheme: const TextTheme(
     headlineLarge: TextStyle(color: AppColors.primaryText, fontSize: 28, fontWeight: FontWeight.bold),
     headlineMedium: TextStyle(color: AppColors.primaryText, fontSize: 20, fontWeight: FontWeight.bold),
+    headlineSmall: TextStyle(color: AppColors.primaryText, fontSize: 18, fontWeight: FontWeight.bold),
     bodyLarge: TextStyle(color: AppColors.secondaryText, fontSize: 16),
     bodyMedium: TextStyle(color: AppColors.secondaryText, fontSize: 14),
+    bodySmall: TextStyle(color: AppColors.secondaryText, fontSize: 12),
   ),
   appBarTheme: const AppBarTheme(
     backgroundColor: AppColors.background,

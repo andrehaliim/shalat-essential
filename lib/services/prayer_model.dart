@@ -2,6 +2,7 @@ import 'package:adhan_dart/adhan_dart.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 class PrayerModel {
+  final String date;
   final int fajr;
   final int dhuhr;
   final int asr;
@@ -19,6 +20,7 @@ class PrayerModel {
   DateTime? ishaTime;
 
   PrayerModel({
+    this.date = '',
     this.fajr = 0,
     this.dhuhr = 0,
     this.asr = 0,
@@ -46,8 +48,9 @@ class PrayerModel {
     };
   }
 
-  factory PrayerModel.fromMap(Map<String, dynamic> map) {
+  factory PrayerModel.fromMap(String dateTime, Map<String, dynamic> map) {
     return PrayerModel(
+      date: dateTime,
       fajr: map['fajr'] ?? 0,
       dhuhr: map['dhuhr'] ?? 0,
       asr: map['asr'] ?? 0,
@@ -56,8 +59,9 @@ class PrayerModel {
     );
   }
 
-  factory PrayerModel.empty() {
+  factory PrayerModel.empty(String? dateTime) {
     return PrayerModel(
+      date: dateTime ?? '',
       fajr : 0,
       dhuhr : 0,
       asr : 0,

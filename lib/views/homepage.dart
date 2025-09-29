@@ -17,6 +17,7 @@ import 'package:shalat_essential/services/prayer_service.dart';
 import 'package:shalat_essential/services/prayer_tile.dart';
 import 'package:shalat_essential/services/prefs_service.dart';
 import 'package:shalat_essential/services/widget_update.dart';
+import 'package:shalat_essential/views/history.dart';
 import 'package:shalat_essential/views/login.dart';
 import 'package:timezone/timezone.dart' as tz;
 
@@ -41,7 +42,7 @@ class _HomePageState extends State<HomePage> {
   PrayerModel? yesterdayPrayer;
   DateTime todayDate = DateTime.now();
   DateTime yesterdayDate = DateTime.now().subtract(const Duration(days: 1));
-  PrayerModel prayerModel = PrayerModel.empty();
+  PrayerModel prayerModel = PrayerModel.empty(null);
   StreamSubscription<receive_intent.Intent?>? _intentSub;
 
   @override
@@ -228,6 +229,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
+        backgroundColor: AppColors.background, surfaceTintColor: Colors.transparent
       ),
       body: FutureBuilder(
         future: initFuture,
@@ -348,57 +350,85 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     SizedBox(height: 10,),
-                    Material(
-                      elevation: 8,
-                      borderRadius: BorderRadius.circular(10),
-                      color: Theme.of(context).colorScheme.surface,
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 10),
-                        padding: const EdgeInsets.all(10),
-                        child: IntrinsicHeight(
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    SizedBox(
-                                      width: screenWidth,
-                                      height: screenHeight / 25,
-                                      child: Text('Yesterday',
-                                          style: Theme.of(context).textTheme.headlineMedium,
-                                          textAlign: TextAlign.center),
-                                    ),
-                                    Text(DateFormat('EEEE').format(yesterdayDate), style: Theme.of(context).textTheme.bodyMedium),
-                                    Text(DateFormat("dd MMMM yyyy").format(yesterdayDate),style: Theme.of(context).textTheme.bodyMedium),
-                                    const SizedBox(height: 10),
-                                    PrayerTile(prayerModel: yesterdayPrayer),
-                                  ],
+                    GestureDetector(
+                      onTap: () async {
+                        User? user = await FirebaseService.getUserInfo();
+                        if (user == null) {
+                          bool refresh = await Navigator.push(
+                            context,
+                            PageTransition(
+                              type: PageTransitionType.rightToLeft,
+                              childBuilder: (context) => Login(),
+                            ),
+                          );
+                          if(refresh){
+                            initAll();
+                          }
+                        } else {
+                          bool refresh = await Navigator.push(
+                            context,
+                            PageTransition(
+                              type: PageTransitionType.rightToLeft,
+                              childBuilder: (context) => History(user: user),
+                            ),
+                          );
+                          if(refresh){
+                            initAll();
+                          }
+                        }
+                      },
+                      child: Material(
+                        elevation: 8,
+                        borderRadius: BorderRadius.circular(10),
+                        color: Theme.of(context).colorScheme.surface,
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(vertical: 10),
+                          padding: const EdgeInsets.all(10),
+                          child: IntrinsicHeight(
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      SizedBox(
+                                        width: screenWidth,
+                                        height: screenHeight / 25,
+                                        child: Text('Yesterday',
+                                            style: Theme.of(context).textTheme.headlineMedium,
+                                            textAlign: TextAlign.center),
+                                      ),
+                                      Text(DateFormat('EEEE').format(yesterdayDate), style: Theme.of(context).textTheme.bodyMedium),
+                                      Text(DateFormat("dd MMMM yyyy").format(yesterdayDate),style: Theme.of(context).textTheme.bodyMedium),
+                                      const SizedBox(height: 10),
+                                      PrayerTile(prayerModel: yesterdayPrayer),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const VerticalDivider(
-                                thickness: 2,
-                                width: 40,
-                              ),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    SizedBox(
-                                      width: screenWidth,
-                                      height: screenHeight / 25,
-                                      child: Text('Today',
-                                          style: Theme.of(context).textTheme.headlineMedium,
-                                          textAlign: TextAlign.center),
-                                    ),
-                                    Text(DateFormat('EEEE').format(todayDate), style: Theme.of(context).textTheme.bodyMedium),
-                                    Text(DateFormat("dd MMMM yyyy").format(todayDate),style: Theme.of(context).textTheme.bodyMedium),
-                                    const SizedBox(height: 10),
-                                    PrayerTile(prayerModel: todayPrayer),
-                                  ],
+                                const VerticalDivider(
+                                  thickness: 2,
+                                  width: 40,
                                 ),
-                              ),
-                            ],
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      SizedBox(
+                                        width: screenWidth,
+                                        height: screenHeight / 25,
+                                        child: Text('Today',
+                                            style: Theme.of(context).textTheme.headlineMedium,
+                                            textAlign: TextAlign.center),
+                                      ),
+                                      Text(DateFormat('EEEE').format(todayDate), style: Theme.of(context).textTheme.bodyMedium),
+                                      Text(DateFormat("dd MMMM yyyy").format(todayDate),style: Theme.of(context).textTheme.bodyMedium),
+                                      const SizedBox(height: 10),
+                                      PrayerTile(prayerModel: todayPrayer),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

@@ -51,8 +51,8 @@ class PrayerService {
         .get();
 
     return {
-      "today": todayDoc.exists ? PrayerModel.fromMap(todayDoc.data()!) : null,
-      "yesterday": yesterdayDoc.exists ? PrayerModel.fromMap(yesterdayDoc.data()!) : null,
+      "today": todayDoc.exists ? PrayerModel.fromMap(todayString, todayDoc.data()!) : null,
+      "yesterday": yesterdayDoc.exists ? PrayerModel.fromMap(yesterdayString, yesterdayDoc.data()!) : null,
     };
   }
 
@@ -80,7 +80,7 @@ class PrayerService {
       "isha": prayerModel.ishaTime,
     };
 
-    final currentPrayer = getCurrentTracker(today, times);
+    final currentPrayer = getCurrentPrayer(today, times);
 
     final docRef = FirebaseFirestore.instance
         .collection('tracker')
@@ -110,7 +110,7 @@ class PrayerService {
       "isha": prayerModel.ishaTime,
     };
 
-    final currentPrayer = getCurrentTracker(now, times);
+    final currentPrayer = getCurrentPrayer(now, times);
 
     final docRef = FirebaseFirestore.instance
         .collection('tracker')
@@ -138,7 +138,7 @@ class PrayerService {
     );
   }
 
-  String getCurrentTracker(DateTime now, Map<String, DateTime?> times) {
+  String getCurrentPrayer(DateTime now, Map<String, DateTime?> times) {
     final orderedPrayers = [
       {"name": "fajr", "time": times["fajr"]!},
       {"name": "dhuhr", "time": times["dhuhr"]!},
@@ -166,5 +166,37 @@ class PrayerService {
     PrayerTimes prayerTimes = PrayerTimes(coordinates: coordinates, date: date, calculationParameters: params);
 
     return PrayerResult(prayerTimes: prayerTimes, location: location, dateTime: date);
+  }
+
+  Future<List<PrayerModel>> getAllTrackerData(String userId, {required int year,required int month,}) async {
+    String formatDate(DateTime date) =>
+        "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+
+    //final firstDayOfMonth = DateTime(year, month, 1);
+    final nextMonth = DateTime(year, month + 1, 1);
+    final lastDayOfMonth = nextMonth.subtract(const Duration(days: 1));
+
+    final firestore = FirebaseFirestore.instance;
+    List<PrayerModel> results = [];
+
+    for (int i = 0; i < lastDayOfMonth.day; i++) {
+      final date = DateTime(year, month, i + 1);
+      final dateString = formatDate(date);
+
+      final doc = await firestore
+          .collection('tracker')
+          .doc(userId)
+          .collection('prayer')
+          .doc(dateString)
+          .get();
+
+      if (doc.exists) {
+        results.add(PrayerModel.fromMap(dateString, doc.data()!));
+      } else {
+        results.add(PrayerModel.empty(dateString));
+      }
+    }
+
+    return results;
   }
 }
