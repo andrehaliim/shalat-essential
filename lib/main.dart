@@ -4,6 +4,7 @@ import 'package:home_widget/home_widget.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shalat_essential/services/prayer_service.dart';
+import 'package:shalat_essential/store.dart';
 import 'package:shalat_essential/views/homepage.dart';
 import 'package:shalat_essential/services/themedata.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,6 +15,7 @@ import 'services/firebase_options.dart';
 import 'services/notification_service.dart';
 
 const updateWidgetTask = "updateWidgetTask";
+late ObjectBox objectbox;
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
@@ -106,6 +108,7 @@ void callbackDispatcher() {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  objectbox = await ObjectBox.create();
 
   // Initialize WorkManager FIRST
   await Workmanager().initialize(

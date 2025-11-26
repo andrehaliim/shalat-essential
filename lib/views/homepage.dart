@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/intl.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:receive_intent/receive_intent.dart' as receive_intent;
 import 'package:shalat_essential/components/compass.dart';
@@ -44,10 +45,13 @@ class _HomePageState extends State<HomePage> {
   DateTime yesterdayDate = DateTime.now().subtract(const Duration(days: 1));
   PrayerModel prayerModel = PrayerModel.empty(null);
   StreamSubscription<receive_intent.Intent?>? _intentSub;
+  String appVersion = '';
+  bool visibleLogout = false;
 
   @override
   void initState() {
     super.initState();
+    getAppVersion();
     initFuture = initAll();
     _lastTime = DateTime.now();
     _timer = Timer.periodic(Duration(seconds: 10), (timer) {
@@ -71,6 +75,9 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> initAll() async {
     User? user = await FirebaseService.getUserInfo();
+    if(user != null){
+      visibleLogout = true;
+    }
 
     setState(() {
       isGetLocation = true;
@@ -107,6 +114,13 @@ class _HomePageState extends State<HomePage> {
     }
     setState(() {
       isGetLocation = false;
+    });
+  }
+
+  Future<void> getAppVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    setState(() {
+      appVersion = info.version;
     });
   }
 
@@ -208,24 +222,29 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Muslim Essential'),
-            GestureDetector(
-              onTap: () => FirebaseService.logout().then((_) {
-                  if (mounted) {
-                    setState(() {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Logout successful")),
-                      );
-                      nickname = null;
-                      todayPrayer = null;
-                      yesterdayPrayer = null;
-                      WidgetUpdate().updateWidgetPrayerTracker(prayerModel: null);
-                    });
-                  }
-              }),
-              child: Icon(Icons.logout),
+            Text('Muslim Essential'),
+            SizedBox(width: 10,),
+            appVersion.isNotEmpty ? Text('v$appVersion', style: Theme.of(context).textTheme.bodySmall) : Container(),
+            Spacer(),
+            Visibility(
+              visible: visibleLogout,
+              child: GestureDetector(
+                onTap: () => FirebaseService.logout().then((_) {
+                    if (mounted) {
+                      setState(() {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Logout successful")),
+                        );
+                        nickname = null;
+                        todayPrayer = null;
+                        yesterdayPrayer = null;
+                        WidgetUpdate().updateWidgetPrayerTracker(prayerModel: null);
+                      });
+                    }
+                }),
+                child: Icon(Icons.logout),
+              ),
             ),
           ],
         ),

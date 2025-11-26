@@ -1,0 +1,62 @@
+{
+  "_note1": "KEEP THIS FILE! Check it into a version control system (VCS) like git.",
+  "_note2": "ObjectBox manages crucial IDs for your object model. See docs for details.",
+  "_note3": "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs.",
+  "entities": [
+    {
+      "id": "1:5773730938993993981",
+      "lastPropertyId": "7:6322474454303307640",
+      "name": "PrayerData",
+      "properties": [
+        {
+          "id": "1:6148757172956881348",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:338590848365617383",
+          "name": "date",
+          "type": 9
+        },
+        {
+          "id": "3:2006736924553821778",
+          "name": "fajr",
+          "type": 10
+        },
+        {
+          "id": "4:7360556543443327964",
+          "name": "dhuhr",
+          "type": 10
+        },
+        {
+          "id": "5:2262257206876941303",
+          "name": "asr",
+          "type": 10
+        },
+        {
+          "id": "6:8402480542068871028",
+          "name": "maghrib",
+          "type": 10
+        },
+        {
+          "id": "7:6322474454303307640",
+          "name": "isha",
+          "type": 10
+        }
+      ],
+      "relations": []
+    }
+  ],
+  "lastEntityId": "1:5773730938993993981",
+  "lastIndexId": "0:0",
+  "lastRelationId": "0:0",
+  "lastSequenceId": "0:0",
+  "modelVersion": 5,
+  "modelVersionParserMinimum": 5,
+  "retiredEntityUids": [],
+  "retiredIndexUids": [],
+  "retiredPropertyUids": [],
+  "retiredRelationUids": [],
+  "version": 1
+}
