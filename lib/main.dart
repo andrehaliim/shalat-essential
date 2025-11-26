@@ -1,8 +1,11 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:intl/intl.dart';
+import 'package:objectbox/objectbox.dart';
 import 'package:provider/provider.dart';
+import 'package:shalat_essential/objectbox.g.dart';
 import 'package:shalat_essential/services/prayer_service.dart';
 import 'package:shalat_essential/store.dart';
 import 'package:shalat_essential/views/homepage.dart';
@@ -16,6 +19,7 @@ import 'services/notification_service.dart';
 
 const updateWidgetTask = "updateWidgetTask";
 late ObjectBox objectbox;
+Admin? objectBoxAdmin;
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
@@ -109,6 +113,10 @@ void callbackDispatcher() {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   objectbox = await ObjectBox.create();
+
+  if (kDebugMode && Admin.isAvailable()) {
+    objectBoxAdmin = Admin(objectbox.store, bindUri: 'http://127.0.0.1:8090');
+  }
 
   // Initialize WorkManager FIRST
   await Workmanager().initialize(

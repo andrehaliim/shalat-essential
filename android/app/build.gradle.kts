@@ -40,5 +40,12 @@ flutter {
 }
 
 dependencies {
-    coreLibraryDesugaring ("com.android.tools:desugar_jdk_libs:2.1.5")
+    debugImplementation("io.objectbox:objectbox-android-objectbrowser:5.0.1")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+}
+
+configurations {
+    named("debugImplementation") {
+        exclude(group = "io.objectbox", module = "objectbox-android")
+    }
 }
