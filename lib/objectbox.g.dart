@@ -14,57 +14,164 @@ import 'package:objectbox/internal.dart'
 import 'package:objectbox/objectbox.dart' as obx;
 import 'package:objectbox_flutter_libs/objectbox_flutter_libs.dart';
 
-import 'prayer_data.dart';
+import 'objectbox/location_database.dart';
+import 'objectbox/prayer_database.dart';
 
 export 'package:objectbox/objectbox.dart'; // so that callers only have to import this file
 
 final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
-    id: const obx_int.IdUid(1, 5773730938993993981),
-    name: 'PrayerData',
-    lastPropertyId: const obx_int.IdUid(7, 6322474454303307640),
+    id: const obx_int.IdUid(2, 8626931268567157699),
+    name: 'LocationDatabase',
+    lastPropertyId: const obx_int.IdUid(6, 8213796623880618473),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(1, 6148757172956881348),
+        id: const obx_int.IdUid(1, 4438573306397422292),
         name: 'id',
         type: 6,
         flags: 1,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(2, 338590848365617383),
+        id: const obx_int.IdUid(2, 1218993251673989396),
+        name: 'name',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 7401794782420331303),
+        name: 'latitude',
+        type: 8,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 7132060023670228498),
+        name: 'longitude',
+        type: 8,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 8853926616591567563),
+        name: 'createdAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 8213796623880618473),
+        name: 'timezone',
+        type: 9,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(3, 923632831321692272),
+    name: 'PrayerDatabase',
+    lastPropertyId: const obx_int.IdUid(17, 6493715357415016645),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 8076554339358451720),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 4032964630583357664),
         name: 'date',
         type: 9,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(3, 2006736924553821778),
+        id: const obx_int.IdUid(3, 1487626960146742106),
         name: 'fajr',
         type: 10,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(4, 7360556543443327964),
+        id: const obx_int.IdUid(4, 3079958269626930299),
         name: 'dhuhr',
         type: 10,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(5, 2262257206876941303),
+        id: const obx_int.IdUid(5, 2839699057567897621),
         name: 'asr',
         type: 10,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(6, 8402480542068871028),
+        id: const obx_int.IdUid(6, 4704430479395082439),
         name: 'maghrib',
         type: 10,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(7, 6322474454303307640),
+        id: const obx_int.IdUid(7, 5470104920082623852),
         name: 'isha',
         type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 6176358829927038791),
+        name: 'notifFajr',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 5176099808815380531),
+        name: 'notifDhuhr',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 5377374526501107833),
+        name: 'notifAsr',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(11, 8027081642143476304),
+        name: 'notifMaghrib',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(12, 3038711266894414265),
+        name: 'notifIsha',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(13, 1556031706912685838),
+        name: 'doneFajr',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(14, 1354301949340024576),
+        name: 'doneDhuhr',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(15, 5053649030347092396),
+        name: 'doneAsr',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(16, 121041297179681785),
+        name: 'doneMaghrib',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(17, 6493715357415016645),
+        name: 'doneIsha',
+        type: 1,
         flags: 0,
       ),
     ],
@@ -111,13 +218,31 @@ Future<obx.Store> openStore({
 obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(1, 5773730938993993981),
+    lastEntityId: const obx_int.IdUid(3, 923632831321692272),
     lastIndexId: const obx_int.IdUid(0, 0),
     lastRelationId: const obx_int.IdUid(0, 0),
     lastSequenceId: const obx_int.IdUid(0, 0),
-    retiredEntityUids: const [],
+    retiredEntityUids: const [5773730938993993981],
     retiredIndexUids: const [],
-    retiredPropertyUids: const [],
+    retiredPropertyUids: const [
+      6148757172956881348,
+      338590848365617383,
+      2006736924553821778,
+      7360556543443327964,
+      2262257206876941303,
+      8402480542068871028,
+      6322474454303307640,
+      2293060089884591277,
+      6006023642252356071,
+      1485261813626006966,
+      7119301454358859466,
+      4736661145065061077,
+      4873630903605340269,
+      1826725505239263609,
+      2846198166096780935,
+      1289020332100057298,
+      8998451011011379527,
+    ],
     retiredRelationUids: const [],
     modelVersion: 5,
     modelVersionParserMinimum: 5,
@@ -125,17 +250,80 @@ obx_int.ModelDefinition getObjectBoxModel() {
   );
 
   final bindings = <Type, obx_int.EntityDefinition>{
-    PrayerData: obx_int.EntityDefinition<PrayerData>(
+    LocationDatabase: obx_int.EntityDefinition<LocationDatabase>(
       model: _entities[0],
-      toOneRelations: (PrayerData object) => [],
-      toManyRelations: (PrayerData object) => {},
-      getId: (PrayerData object) => object.id,
-      setId: (PrayerData object, int id) {
+      toOneRelations: (LocationDatabase object) => [],
+      toManyRelations: (LocationDatabase object) => {},
+      getId: (LocationDatabase object) => object.id,
+      setId: (LocationDatabase object, int id) {
         object.id = id;
       },
-      objectToFB: (PrayerData object, fb.Builder fbb) {
+      objectToFB: (LocationDatabase object, fb.Builder fbb) {
+        final nameOffset = fbb.writeString(object.name);
+        final timezoneOffset = fbb.writeString(object.timezone);
+        fbb.startTable(7);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, nameOffset);
+        fbb.addFloat64(2, object.latitude);
+        fbb.addFloat64(3, object.longitude);
+        fbb.addInt64(4, object.createdAt.millisecondsSinceEpoch);
+        fbb.addOffset(5, timezoneOffset);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final nameParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final latitudeParam = const fb.Float64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          8,
+          0,
+        );
+        final longitudeParam = const fb.Float64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          10,
+          0,
+        );
+        final timezoneParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 14, '');
+        final createdAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 12, 0),
+        );
+        final object = LocationDatabase(
+          id: idParam,
+          name: nameParam,
+          latitude: latitudeParam,
+          longitude: longitudeParam,
+          timezone: timezoneParam,
+          createdAt: createdAtParam,
+        );
+
+        return object;
+      },
+    ),
+    PrayerDatabase: obx_int.EntityDefinition<PrayerDatabase>(
+      model: _entities[1],
+      toOneRelations: (PrayerDatabase object) => [],
+      toManyRelations: (PrayerDatabase object) => {},
+      getId: (PrayerDatabase object) => object.id,
+      setId: (PrayerDatabase object, int id) {
+        object.id = id;
+      },
+      objectToFB: (PrayerDatabase object, fb.Builder fbb) {
         final dateOffset = fbb.writeString(object.date);
-        fbb.startTable(8);
+        fbb.startTable(18);
         fbb.addInt64(0, object.id);
         fbb.addOffset(1, dateOffset);
         fbb.addInt64(2, object.fajr.millisecondsSinceEpoch);
@@ -143,6 +331,16 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addInt64(4, object.asr.millisecondsSinceEpoch);
         fbb.addInt64(5, object.maghrib.millisecondsSinceEpoch);
         fbb.addInt64(6, object.isha.millisecondsSinceEpoch);
+        fbb.addBool(7, object.notifFajr);
+        fbb.addBool(8, object.notifDhuhr);
+        fbb.addBool(9, object.notifAsr);
+        fbb.addBool(10, object.notifMaghrib);
+        fbb.addBool(11, object.notifIsha);
+        fbb.addBool(12, object.doneFajr);
+        fbb.addBool(13, object.doneDhuhr);
+        fbb.addBool(14, object.doneAsr);
+        fbb.addBool(15, object.doneMaghrib);
+        fbb.addBool(16, object.doneIsha);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -173,7 +371,67 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final ishaParam = DateTime.fromMillisecondsSinceEpoch(
           const fb.Int64Reader().vTableGet(buffer, rootOffset, 16, 0),
         );
-        final object = PrayerData(
+        final notifFajrParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          18,
+          false,
+        );
+        final notifDhuhrParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          20,
+          false,
+        );
+        final notifAsrParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          22,
+          false,
+        );
+        final notifMaghribParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          24,
+          false,
+        );
+        final notifIshaParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          26,
+          false,
+        );
+        final doneFajrParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          28,
+          false,
+        );
+        final doneDhuhrParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          30,
+          false,
+        );
+        final doneAsrParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          32,
+          false,
+        );
+        final doneMaghribParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          34,
+          false,
+        );
+        final doneIshaParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          36,
+          false,
+        );
+        final object = PrayerDatabase(
           id: idParam,
           date: dateParam,
           fajr: fajrParam,
@@ -181,6 +439,16 @@ obx_int.ModelDefinition getObjectBoxModel() {
           asr: asrParam,
           maghrib: maghribParam,
           isha: ishaParam,
+          notifFajr: notifFajrParam,
+          notifDhuhr: notifDhuhrParam,
+          notifAsr: notifAsrParam,
+          notifMaghrib: notifMaghribParam,
+          notifIsha: notifIshaParam,
+          doneFajr: doneFajrParam,
+          doneDhuhr: doneDhuhrParam,
+          doneAsr: doneAsrParam,
+          doneMaghrib: doneMaghribParam,
+          doneIsha: doneIshaParam,
         );
 
         return object;
@@ -191,40 +459,123 @@ obx_int.ModelDefinition getObjectBoxModel() {
   return obx_int.ModelDefinition(model, bindings);
 }
 
-/// [PrayerData] entity fields to define ObjectBox queries.
-class PrayerData_ {
-  /// See [PrayerData.id].
-  static final id = obx.QueryIntegerProperty<PrayerData>(
+/// [LocationDatabase] entity fields to define ObjectBox queries.
+class LocationDatabase_ {
+  /// See [LocationDatabase.id].
+  static final id = obx.QueryIntegerProperty<LocationDatabase>(
     _entities[0].properties[0],
   );
 
-  /// See [PrayerData.date].
-  static final date = obx.QueryStringProperty<PrayerData>(
+  /// See [LocationDatabase.name].
+  static final name = obx.QueryStringProperty<LocationDatabase>(
     _entities[0].properties[1],
   );
 
-  /// See [PrayerData.fajr].
-  static final fajr = obx.QueryDateProperty<PrayerData>(
+  /// See [LocationDatabase.latitude].
+  static final latitude = obx.QueryDoubleProperty<LocationDatabase>(
     _entities[0].properties[2],
   );
 
-  /// See [PrayerData.dhuhr].
-  static final dhuhr = obx.QueryDateProperty<PrayerData>(
+  /// See [LocationDatabase.longitude].
+  static final longitude = obx.QueryDoubleProperty<LocationDatabase>(
     _entities[0].properties[3],
   );
 
-  /// See [PrayerData.asr].
-  static final asr = obx.QueryDateProperty<PrayerData>(
+  /// See [LocationDatabase.createdAt].
+  static final createdAt = obx.QueryDateProperty<LocationDatabase>(
     _entities[0].properties[4],
   );
 
-  /// See [PrayerData.maghrib].
-  static final maghrib = obx.QueryDateProperty<PrayerData>(
+  /// See [LocationDatabase.timezone].
+  static final timezone = obx.QueryStringProperty<LocationDatabase>(
     _entities[0].properties[5],
   );
+}
 
-  /// See [PrayerData.isha].
-  static final isha = obx.QueryDateProperty<PrayerData>(
-    _entities[0].properties[6],
+/// [PrayerDatabase] entity fields to define ObjectBox queries.
+class PrayerDatabase_ {
+  /// See [PrayerDatabase.id].
+  static final id = obx.QueryIntegerProperty<PrayerDatabase>(
+    _entities[1].properties[0],
+  );
+
+  /// See [PrayerDatabase.date].
+  static final date = obx.QueryStringProperty<PrayerDatabase>(
+    _entities[1].properties[1],
+  );
+
+  /// See [PrayerDatabase.fajr].
+  static final fajr = obx.QueryDateProperty<PrayerDatabase>(
+    _entities[1].properties[2],
+  );
+
+  /// See [PrayerDatabase.dhuhr].
+  static final dhuhr = obx.QueryDateProperty<PrayerDatabase>(
+    _entities[1].properties[3],
+  );
+
+  /// See [PrayerDatabase.asr].
+  static final asr = obx.QueryDateProperty<PrayerDatabase>(
+    _entities[1].properties[4],
+  );
+
+  /// See [PrayerDatabase.maghrib].
+  static final maghrib = obx.QueryDateProperty<PrayerDatabase>(
+    _entities[1].properties[5],
+  );
+
+  /// See [PrayerDatabase.isha].
+  static final isha = obx.QueryDateProperty<PrayerDatabase>(
+    _entities[1].properties[6],
+  );
+
+  /// See [PrayerDatabase.notifFajr].
+  static final notifFajr = obx.QueryBooleanProperty<PrayerDatabase>(
+    _entities[1].properties[7],
+  );
+
+  /// See [PrayerDatabase.notifDhuhr].
+  static final notifDhuhr = obx.QueryBooleanProperty<PrayerDatabase>(
+    _entities[1].properties[8],
+  );
+
+  /// See [PrayerDatabase.notifAsr].
+  static final notifAsr = obx.QueryBooleanProperty<PrayerDatabase>(
+    _entities[1].properties[9],
+  );
+
+  /// See [PrayerDatabase.notifMaghrib].
+  static final notifMaghrib = obx.QueryBooleanProperty<PrayerDatabase>(
+    _entities[1].properties[10],
+  );
+
+  /// See [PrayerDatabase.notifIsha].
+  static final notifIsha = obx.QueryBooleanProperty<PrayerDatabase>(
+    _entities[1].properties[11],
+  );
+
+  /// See [PrayerDatabase.doneFajr].
+  static final doneFajr = obx.QueryBooleanProperty<PrayerDatabase>(
+    _entities[1].properties[12],
+  );
+
+  /// See [PrayerDatabase.doneDhuhr].
+  static final doneDhuhr = obx.QueryBooleanProperty<PrayerDatabase>(
+    _entities[1].properties[13],
+  );
+
+  /// See [PrayerDatabase.doneAsr].
+  static final doneAsr = obx.QueryBooleanProperty<PrayerDatabase>(
+    _entities[1].properties[14],
+  );
+
+  /// See [PrayerDatabase.doneMaghrib].
+  static final doneMaghrib = obx.QueryBooleanProperty<PrayerDatabase>(
+    _entities[1].properties[15],
+  );
+
+  /// See [PrayerDatabase.doneIsha].
+  static final doneIsha = obx.QueryBooleanProperty<PrayerDatabase>(
+    _entities[1].properties[16],
   );
 }

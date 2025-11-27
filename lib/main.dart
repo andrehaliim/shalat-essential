@@ -1,18 +1,13 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:home_widget/home_widget.dart';
-import 'package:intl/intl.dart';
 import 'package:objectbox/objectbox.dart';
 import 'package:provider/provider.dart';
 import 'package:shalat_essential/objectbox.g.dart';
-import 'package:shalat_essential/services/prayer_service.dart';
-import 'package:shalat_essential/store.dart';
-import 'package:shalat_essential/views/homepage.dart';
+import 'package:shalat_essential/objectbox/store.dart';
 import 'package:shalat_essential/services/themedata.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shalat_essential/views/newhomepage.dart';
 import 'package:workmanager/workmanager.dart';
-import 'package:timezone/data/latest.dart' as tzl;
 
 import 'services/firebase_options.dart';
 import 'services/notification_service.dart';
@@ -23,7 +18,7 @@ Admin? objectBoxAdmin;
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
-  Workmanager().executeTask((task, inputData) async {
+  /*Workmanager().executeTask((task, inputData) async {
     WidgetsFlutterBinding.ensureInitialized();
     tzl.initializeTimeZones();
     final prefs = await SharedPreferences.getInstance();
@@ -107,7 +102,7 @@ void callbackDispatcher() {
         return Future.value(false);
     }
     return Future.value(true);
-  });
+  });*/
 }
 
 void main() async {
@@ -163,7 +158,7 @@ class MyApp extends StatelessWidget {
       darkTheme: appDarkTheme,
       themeMode: ThemeMode.dark,
       debugShowCheckedModeBanner: false,
-      home: HomePage(),
+      home: NewHomePage(),
     );
   }
 }

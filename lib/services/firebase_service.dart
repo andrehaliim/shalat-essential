@@ -6,7 +6,7 @@ class FirebaseService {
     return FirebaseAuth.instance.currentUser;
   }
 
-  static Future<String?> loadNickname() async {
+  static Future<String> loadNickname() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       final doc = await FirebaseFirestore.instance
@@ -18,7 +18,7 @@ class FirebaseService {
         return doc.data()?["nickname"];
       }
     }
-    return null;
+    return '';
   }
 
   static Future<void> logout() async {

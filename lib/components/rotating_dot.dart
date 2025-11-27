@@ -37,8 +37,8 @@ class _RotatingDotState extends State<RotatingDot> with SingleTickerProviderStat
         return Transform.rotate(
           angle: _controller.value * 2 * pi,
           child: SizedBox(
-            width: 20,
-            height: 20,
+            width: 50,
+            height: 50,
             child: Stack(
               alignment: Alignment.center,
               children: [

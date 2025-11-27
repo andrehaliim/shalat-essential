@@ -1,0 +1,502 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:page_transition/page_transition.dart';
+import 'package:shalat_essential/components/rotating_dot.dart';
+import 'package:shalat_essential/services/prayer_service.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:lat_lng_to_timezone/lat_lng_to_timezone.dart' as tzmap;
+import 'package:timezone/data/latest.dart' as tzl;
+
+import '../main.dart';
+import '../objectbox.g.dart';
+import '../objectbox/prayer_database.dart';
+import '../services/colors.dart';
+import '../services/firebase_service.dart';
+import '../services/location_service.dart';
+import '../services/prayer_tile.dart';
+import 'history.dart';
+import 'login.dart';
+
+class NewHomePage extends StatefulWidget {
+  const NewHomePage({super.key});
+
+  @override
+  State<NewHomePage> createState() => _NewHomePageState();
+}
+
+class _NewHomePageState extends State<NewHomePage> {
+  String appVersion = '';
+  bool visibleLogout = false;
+  String locationName = '';
+  late Position position;
+  bool isLoading = false;
+  late DateTime fajr;
+  late DateTime dhuhr;
+  late DateTime asr;
+  late DateTime maghrib;
+  late DateTime isha;
+  String nextPrayer = '';
+  String nextPrayerTime = '';
+  String nickName = 'Guest';
+  late Box<PrayerDatabase> prayerBox;
+  User? firebaseUser;
+  late PrayerDatabase? todayPrayer;
+  late PrayerDatabase? yesterdayPrayer;
+  bool isLoadingTracker = false;
+
+  @override
+  void initState() {
+    initAll();
+    super.initState();
+  }
+
+  Future<void> initAll() async {
+    loadingAnimation();
+    // 1. User login visibility
+    firebaseUser = await FirebaseService.getUserInfo();
+    if(firebaseUser != null) {
+      visibleLogout = true;
+      nickName = await FirebaseService.loadNickname();
+    }
+
+    // 2. Location info
+    position = await LocationService().determinePosition();
+    locationName = await LocationService().getLocationName(position);
+
+    // 3. Store shalat data for this month
+    prayerBox = objectbox.store.box<PrayerDatabase>();
+    final firstRow = prayerBox.getAll().isNotEmpty ? prayerBox.getAll().first : null;
+    if (firstRow != null) {
+      final storedMonth = DateTime.parse(firstRow.date).month;
+      final currentMonth = DateTime.now().month;
+
+      if (storedMonth != currentMonth) {
+        await PrayerService.getShalatDataForMonth(position, firebaseUser?.uid);
+      }
+    } else {
+      // DB empty → must load
+      await PrayerService.getShalatDataForMonth(position, firebaseUser?.uid);
+    }
+    // 4. Read today's record from db
+    await calculateTodayPrayer();
+    await calculateNextPrayer(DateTime.now());
+
+    // 5. Refresh widget after async tasks finish
+    if (mounted) setState(() {});
+    loadingAnimation();
+  }
+
+  Future<void> calculateTodayPrayer() async {
+    tzl.initializeTimeZones();
+    double latitude = position.latitude;
+    double longitude = position.longitude;
+    DateTime today = DateTime.now();
+    DateTime yesterday = DateTime.now().subtract(Duration(days: 1));
+
+    final String todayDate = "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+    final String yesterdayDate = "${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}";
+
+    todayPrayer = prayerBox.query(PrayerDatabase_.date.equals(todayDate)).build().findFirst();
+    yesterdayPrayer = prayerBox.query(PrayerDatabase_.date.equals(yesterdayDate)).build().findFirst();
+
+    if (todayPrayer != null) {
+      final location = tz.getLocation(tzmap.latLngToTimezoneString(latitude, longitude));
+
+      fajr     = tz.TZDateTime.from(todayPrayer!.fajr, location);
+      dhuhr    = tz.TZDateTime.from(todayPrayer!.dhuhr, location);
+      asr      = tz.TZDateTime.from(todayPrayer!.asr, location);
+      maghrib  = tz.TZDateTime.from(todayPrayer!.maghrib, location);
+      isha     = tz.TZDateTime.from(todayPrayer!.isha, location);
+    }
+  }
+
+  Future<void> calculateNextPrayer(DateTime now) async{
+    // Create ordered list of today's prayer times
+    final List<Map<String, dynamic>> prayersToday = [
+      {"name": "Fajr", "time": fajr},
+      {"name": "Dhuhr", "time": dhuhr},
+      {"name": "Asr", "time": asr},
+      {"name": "Maghrib", "time": maghrib},
+      {"name": "Isha", "time": isha},
+    ];
+
+    // Find the first prayer time that is after current time
+    Map<String, dynamic>? next;
+    for (var p in prayersToday) {
+      if (now.isBefore(p["time"])) {
+        next = p;
+        break;
+      }
+    }
+
+    // If none remaining today -> next is tomorrow's Fajr
+    if (next == null) {
+      // You will load tomorrow's Fajr from DB too in initAll. Example:
+      final tomorrowPrayer = objectbox.store.box<PrayerDatabase>()
+          .query(PrayerDatabase_.date.equals(DateFormat('yyyy-MM-dd').format(now.add(const Duration(days: 1)))))
+          .build()
+          .findFirst();
+
+      next = {
+        "name": "Fajr",
+        "time": tomorrowPrayer!.fajr.add(const Duration(days: 1))
+      };
+    }
+
+    // Calculate remaining duration
+    Duration remaining = next["time"].difference(now);
+    String hours = remaining.inHours.toString().padLeft(2, '0');
+    String minutes = (remaining.inMinutes % 60).toString().padLeft(2, '0');
+
+    setState(() {
+      nextPrayer = next!["name"];
+      nextPrayerTime = "in ${hours}h ${minutes}m";
+    });
+  }
+
+  Future<void> getAppVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    setState(() {
+      appVersion = info.version;
+    });
+  }
+  
+  void loadingAnimation() {
+    setState(() {
+      isLoading = !isLoading;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final screenWidth = size.width;
+    final screenHeight = size.height;
+
+    return Scaffold(
+      appBar: AppBar(
+          title: Row(
+            children: [
+              Text('Muslim Essential'),
+              SizedBox(width: 10,),
+              appVersion.isNotEmpty ? Text('v$appVersion', style: Theme.of(context).textTheme.bodySmall) : Container(),
+              Spacer(),
+              Visibility(
+                visible: visibleLogout,
+                child: GestureDetector(
+                  onTap: () => FirebaseService.logout().then((_) {
+                    if (mounted) {
+                      setState(() {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Logout successful")),
+                        );
+                      });
+                    }
+                  }),
+                  child: Icon(Icons.logout),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.background, surfaceTintColor: Colors.transparent
+      ),
+      body: !isLoading
+        ? Container(
+        padding: EdgeInsets.all(10),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Assalamualaikum,', style: Theme.of(context).textTheme.bodyMedium),
+              Text(nickName, style: Theme.of(context).textTheme.headlineLarge),
+              SizedBox(height: 20,),
+              GestureDetector(
+                onTap: initAll,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.location_on, size: 20,),
+                    Expanded(child: Text(locationName, style: Theme.of(context).textTheme.bodyMedium, maxLines: 2,))
+                  ],
+                ),
+              ),
+              SizedBox(height: 20,),
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Next prayer is,', style: Theme.of(context).textTheme.bodyMedium),
+                          Text(nextPrayer, style: Theme.of(context).textTheme.headlineLarge),
+                          Text(nextPrayerTime, style: Theme.of(context).textTheme.bodyMedium),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: ElevatedButton(
+                        style: Theme.of(context).elevatedButtonTheme.style,
+                        onPressed: () async {
+                          //showCompass();
+                        },
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.explore, size: 30, color: AppColors.primaryText),
+                            SizedBox(height: 5),
+                            Text('Qibla', style: Theme.of(context).textTheme.bodyMedium),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 10,),
+              Material(
+                elevation: 8,
+                borderRadius: BorderRadius.circular(10),
+                color: Theme.of(context).colorScheme.surface,
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  child: Row(
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Fajr', style: Theme.of(context).textTheme.bodyMedium),
+                          Text('Dhuhr', style: Theme.of(context).textTheme.bodyMedium),
+                          Text('Asr', style: Theme.of(context).textTheme.bodyMedium),
+                          Text('Maghrib', style: Theme.of(context).textTheme.bodyMedium),
+                          Text('Isha', style: Theme.of(context).textTheme.bodyMedium),
+                        ],
+                      ),
+                      const Spacer(),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(DateFormat('HH:mm').format(fajr), style: Theme.of(context).textTheme.bodyMedium),
+                          Text(DateFormat('HH:mm').format(dhuhr), style: Theme.of(context).textTheme.bodyMedium),
+                          Text(DateFormat('HH:mm').format(asr), style: Theme.of(context).textTheme.bodyMedium),
+                          Text(DateFormat('HH:mm').format(maghrib), style: Theme.of(context).textTheme.bodyMedium),
+                          Text(DateFormat('HH:mm').format(isha), style: Theme.of(context).textTheme.bodyMedium),
+                        ],
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          GestureDetector(
+                              onTap: () => toggleNotification(1),
+                              child: todayPrayer!.notifFajr ? Icon(Icons.notifications_active_outlined, size: 20) : Icon(Icons.notifications_off_outlined, size: 20)),
+                          GestureDetector(
+                              onTap: () => toggleNotification(2),
+                              child: todayPrayer!.notifDhuhr ? Icon(Icons.notifications_active_outlined, size: 20) : Icon(Icons.notifications_off_outlined, size: 20)),
+                          GestureDetector(
+                              onTap: () => toggleNotification(3),
+                              child: todayPrayer!.notifAsr ? Icon(Icons.notifications_active_outlined, size: 20) : Icon(Icons.notifications_off_outlined, size: 20)),
+                          GestureDetector(
+                              onTap: () => toggleNotification(4),
+                              child: todayPrayer!.notifMaghrib ? Icon(Icons.notifications_active_outlined, size: 20) : Icon(Icons.notifications_off_outlined, size: 20)),
+                          GestureDetector(
+                              onTap: () => toggleNotification(5),
+                              child: todayPrayer!.notifIsha ? Icon(Icons.notifications_active_outlined, size: 20) : Icon(Icons.notifications_off_outlined, size: 20)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 10,),
+              GestureDetector(
+                onTap: () async {
+                  if (firebaseUser == null) {
+                    bool refresh = await Navigator.push(
+                      context,
+                      PageTransition(
+                        type: PageTransitionType.rightToLeft,
+                        childBuilder: (context) => Login(),
+                      ),
+                    );
+                    if(refresh){
+                      initAll();
+                    }
+                  } else {
+                    bool refresh = await Navigator.push(
+                      context,
+                      PageTransition(
+                        type: PageTransitionType.rightToLeft,
+                        childBuilder: (context) => History(),
+                      ),
+                    );
+                    if(refresh){
+                      initAll();
+                    }
+                  }
+                },
+                child: Material(
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(10),
+                  color: Theme.of(context).colorScheme.surface,
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 10),
+                    padding: const EdgeInsets.all(10),
+                    child: IntrinsicHeight(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  width: screenWidth,
+                                  height: screenHeight / 25,
+                                  child: Text('Yesterday',
+                                      style: Theme.of(context).textTheme.headlineMedium,
+                                      textAlign: TextAlign.center),
+                                ),
+                                Text(DateFormat('EEEE').format(DateTime.now().subtract(Duration(days: 1))), style: Theme.of(context).textTheme.bodyMedium),
+                                Text(DateFormat("dd MMMM yyyy").format(DateTime.now().subtract(Duration(days: 1))),style: Theme.of(context).textTheme.bodyMedium),
+                                const SizedBox(height: 10),
+                                PrayerTile(prayerDatabase: yesterdayPrayer),
+                              ],
+                            ),
+                          ),
+                          const VerticalDivider(
+                            thickness: 2,
+                            width: 40,
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  width: screenWidth,
+                                  height: screenHeight / 25,
+                                  child: Text('Today',
+                                      style: Theme.of(context).textTheme.headlineMedium,
+                                      textAlign: TextAlign.center),
+                                ),
+                                Text(DateFormat('EEEE').format(DateTime.now()), style: Theme.of(context).textTheme.bodyMedium),
+                                Text(DateFormat("dd MMMM yyyy").format(DateTime.now()),style: Theme.of(context).textTheme.bodyMedium),
+                                const SizedBox(height: 10),
+                                PrayerTile(prayerDatabase: todayPrayer),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 10,),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      width: screenWidth,
+                      height: kMinInteractiveDimension,
+                      child: ElevatedButton(
+                        style: Theme.of(context).elevatedButtonTheme.style,
+                        onPressed: trackPrayerFunction,
+                        child: isLoadingTracker
+                            ? RotatingDot()
+                            : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.check_box_outlined, size: 30, color: AppColors.primaryText,),
+                            Text('Track Prayer', style: Theme.of(context).primaryTextTheme.labelLarge),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            ],
+          ),
+        ),
+      )
+          : Center(child: RotatingDot())
+    );
+  }
+
+  void toggleNotification(int id) async {
+    final allPrayers = prayerBox.getAll();
+
+    setState(() {
+      for (var p in allPrayers) {
+        switch (id) {
+          case 1:
+            p.notifFajr = !p.notifFajr;
+            break;
+          case 2:
+            p.notifDhuhr = !p.notifDhuhr;
+            break;
+          case 3:
+            p.notifAsr = !p.notifAsr;
+            break;
+          case 4:
+            p.notifMaghrib = !p.notifMaghrib;
+            break;
+          case 5:
+            p.notifIsha = !p.notifIsha;
+            break;
+        }
+      }
+      prayerBox.putMany(allPrayers);
+      calculateTodayPrayer();
+    });
+
+    /*if ((prayerModel.fajrNotif && id == 1) ||
+        (prayerModel.dhuhrNotif && id == 2) ||
+        (prayerModel.asrNotif && id == 3) ||
+        (prayerModel.maghribNotif && id == 4) ||
+        (prayerModel.ishaNotif && id == 5)) {
+      // Schedule notification
+      NotificationService.scheduleNotification(
+        id: id,
+        title: "Prayer Reminder",
+        body: "$prayerName prayer will start in 5 minutes at ${DateFormat.Hm().format(time)}.",
+        scheduledTime: time,
+      );
+      WidgetUpdate().updateWidgetPrayerNotification(name: prayerName, notification: true);
+    } else {
+      // Cancel notification
+      final plugin = FlutterLocalNotificationsPlugin();
+      await plugin.cancel(id);
+      WidgetUpdate().updateWidgetPrayerNotification(name: prayerName, notification: false);
+    }*/
+  }
+
+  void trackPrayerFunction() async {
+    if (firebaseUser == null) {
+      bool refresh = await Navigator.push(
+        context,
+        PageTransition(
+          type: PageTransitionType.rightToLeft,
+          childBuilder: (context) => Login(),
+        ),
+      );
+      if(refresh){
+        initAll();
+      }
+    } else {
+      setState(() {
+        isLoadingTracker = true;
+      });
+      await PrayerService().trackPrayer(context, firebaseUser!.uid);
+      setState(() {
+        isLoadingTracker = false;
+      });
+    }
+  }
+}

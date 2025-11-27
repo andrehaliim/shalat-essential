@@ -1,144 +1,103 @@
+import 'dart:developer';
+
 import 'package:adhan_dart/adhan_dart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:lat_lng_to_timezone/lat_lng_to_timezone.dart' as tzmap;
-import 'package:shalat_essential/services/prayer_model.dart';
 import 'package:timezone/data/latest.dart' as tzl;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../main.dart';
+import '../objectbox.g.dart';
+import '../objectbox/prayer_database.dart';
+
 class PrayerService {
-  static Future<PrayerResult> getShalatData(Position position) async {
-    tzl.initializeTimeZones();
-    double latitude = position.latitude;
-    double longitude = position.longitude;
-    final location = tz.getLocation(tzmap.latLngToTimezoneString(latitude, longitude));
-    DateTime date = tz.TZDateTime.from(DateTime.now(), location);
-    Coordinates coordinates = Coordinates(latitude, longitude);
-    CalculationParameters params = CalculationMethod.singapore();
-    params.madhab = Madhab.shafi;
-    PrayerTimes prayerTimes = PrayerTimes(coordinates: coordinates, date: date, calculationParameters: params);
-
-    return PrayerResult(prayerTimes: prayerTimes, location: location, dateTime: date);
-  }
-
-  Future<Map<String, PrayerModel?>> getTracker(String userId) async {
-    final now = DateTime.now();
-
-    // format helper
-    String formatDate(DateTime date) =>
-        "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
-
-    final todayString = formatDate(now);
-    final yesterdayString = formatDate(now.subtract(const Duration(days: 1)));
-
+  Future<bool> trackPrayer(BuildContext context, String userId) async {
+    Box<PrayerDatabase> prayerBox = objectbox.store.box<PrayerDatabase>();
     final firestore = FirebaseFirestore.instance;
 
-    // today doc
-    final todayDoc = await firestore
-        .collection('tracker')
-        .doc(userId)
-        .collection('prayer')
-        .doc(todayString)
-        .get();
-
-    // yesterday doc
-    final yesterdayDoc = await firestore
-        .collection('tracker')
-        .doc(userId)
-        .collection('prayer')
-        .doc(yesterdayString)
-        .get();
-
-    return {
-      "today": todayDoc.exists ? PrayerModel.fromMap(todayString, todayDoc.data()!) : null,
-      "yesterday": yesterdayDoc.exists ? PrayerModel.fromMap(yesterdayString, yesterdayDoc.data()!) : null,
-    };
-  }
-
-  Future<bool> trackPrayer(BuildContext context, String userId, PrayerModel prayerModel) async {
-    final todayDoc = await getTracker(userId);
-    if (todayDoc['today'] != null) {
-      await updateTracker(context, userId, prayerModel);
-      return true;
-    } else {
-      await createTracker(userId, prayerModel);
-      return true;
-    }
-  }
-
-  Future<PrayerModel> createTracker(String userId, PrayerModel prayerModel) async {
-    final today = DateTime.now();
-    final dateString =
-        "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
-
-    final times = {
-      "fajr": prayerModel.fajrTime,
-      "dhuhr": prayerModel.dhuhrTime,
-      "asr": prayerModel.asrTime,
-      "maghrib": prayerModel.maghribTime,
-      "isha": prayerModel.ishaTime,
-    };
-
-    final currentPrayer = getCurrentPrayer(today, times);
-
-    final docRef = FirebaseFirestore.instance
-        .collection('tracker')
-        .doc(userId)
-        .collection('prayer')
-        .doc(dateString);
-
-    final newDay = PrayerModel();
-    final map = newDay.toMap();
-    map[currentPrayer] = 1;
-    await docRef.set(map);
-
-    return newDay;
-  }
-
-  Future<void> updateTracker(BuildContext context, String userId, PrayerModel prayerModel) async {
-    final now = DateTime.now();
-
-    final dateString =
-        "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-
-    final times = {
-      "fajr": prayerModel.fajrTime,
-      "dhuhr": prayerModel.dhuhrTime,
-      "asr": prayerModel.asrTime,
-      "maghrib": prayerModel.maghribTime,
-      "isha": prayerModel.ishaTime,
-    };
-
-    final currentPrayer = getCurrentPrayer(now, times);
-
-    final docRef = FirebaseFirestore.instance
-        .collection('tracker')
-        .doc(userId)
-        .collection('prayer')
-        .doc(dateString);
-
-    final docSnap = await docRef.get();
-
-    if (docSnap.exists && docSnap.data()?[currentPrayer] == 1) {
-      // Already tracked
+    DateTime currentDate = DateTime.now();
+    String date = "${currentDate.year}-${currentDate.month.toString().padLeft(2, '0')}-${currentDate.day.toString().padLeft(2, '0')}";
+    final todayPrayer = prayerBox.query(PrayerDatabase_.date.equals(date)).build().findFirst();
+    if (todayPrayer == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Already tracked prayer")),
+          const SnackBar(content: Text("Prayer data not available"))
       );
-      return;
+      return false;
     }
 
-    // Not tracked yet → update
-    await docRef.set({
-      currentPrayer: 1,
-    }, SetOptions(merge: true));
+    final times = {
+      "fajr": todayPrayer.fajr,
+      "dhuhr": todayPrayer.dhuhr,
+      "asr": todayPrayer.asr,
+      "maghrib": todayPrayer.maghrib,
+      "isha": todayPrayer.isha,
+    };
+      
+    final currentPrayer = currentPrayerName(currentDate, times);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("$currentPrayer tracked successfully")),
-    );
+    final docRef = firestore
+        .collection('tracker')
+        .doc(userId)
+        .collection('prayer')
+        .doc(date);
+
+    // today doc
+    final todayDoc = await docRef.get();
+
+    if (todayDoc.exists) {
+      if (todayDoc.data()?.containsKey(currentPrayer) == true && todayDoc.data()?[currentPrayer] == 1) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Already tracked prayer")),
+        );
+        return true;
+      }
+
+      // Not tracked yet → update
+      await docRef.set({
+        currentPrayer: 1,
+      }, SetOptions(merge: true));
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("$currentPrayer tracked successfully")),
+      );
+    } else {
+      Map<String, dynamic> toMap =
+         {
+          'fajr': todayPrayer.doneFajr ? 1 : 0,
+          'dhuhr': todayPrayer.doneDhuhr ? 1 : 0,
+          'asr': todayPrayer.doneAsr ? 1 : 0,
+          'maghrib': todayPrayer.doneMaghrib ? 1 : 0,
+          'isha': todayPrayer.doneIsha ? 1 : 0,
+        };
+
+      toMap[currentPrayer] = 1;
+      await docRef.set(toMap);
+    }
+
+    switch (currentPrayer) {
+      case 'fajr':
+        todayPrayer.doneFajr = true;
+        break;
+      case 'dhuhr':
+        todayPrayer.doneDhuhr = true;
+        break;
+      case 'asr':
+        todayPrayer.doneAsr = true;
+        break;
+      case 'maghrib':
+        todayPrayer.doneMaghrib = true;
+        break;
+      case 'isha':
+        todayPrayer.doneIsha = true;
+        break;
+    }
+    prayerBox.put(todayPrayer);
+    return true;
   }
 
-  String getCurrentPrayer(DateTime now, Map<String, DateTime?> times) {
+  String currentPrayerName(DateTime now, Map<String, DateTime?> times) {
     final orderedPrayers = [
       {"name": "fajr", "time": times["fajr"]!},
       {"name": "dhuhr", "time": times["dhuhr"]!},
@@ -156,47 +115,72 @@ class PrayerService {
     return currentPrayer;
   }
 
-  static Future<PrayerResult> getShalatDataBackground(double latitude, double longitude) async {
+  static Future<void> getShalatDataForMonth(Position position, String? userId) async {
+    Box<PrayerDatabase> prayerBox = objectbox.store.box<PrayerDatabase>();
+    
+    prayerBox.removeAll();
     tzl.initializeTimeZones();
-    final location = tz.getLocation(tzmap.latLngToTimezoneString(latitude, longitude));
-    DateTime date = tz.TZDateTime.from(DateTime.now(), location);
+
+    double latitude = position.latitude;
+    double longitude = position.longitude;
     Coordinates coordinates = Coordinates(latitude, longitude);
+
+    final location = tz.getLocation(tzmap.latLngToTimezoneString(latitude, longitude));
+    DateTime now = tz.TZDateTime.from(DateTime.now(), location);
+    DateTime firstDay = DateTime(now.year, now.month, 1);
+    DateTime lastDay = DateTime(now.year, now.month + 1, 0);
+
     CalculationParameters params = CalculationMethod.singapore();
     params.madhab = Madhab.shafi;
-    PrayerTimes prayerTimes = PrayerTimes(coordinates: coordinates, date: date, calculationParameters: params);
 
-    return PrayerResult(prayerTimes: prayerTimes, location: location, dateTime: date);
-  }
+    for (int i = 0; i < lastDay.day; i++) {
+      DateTime currentDate = firstDay.add(Duration(days: i));
+      final firestore = FirebaseFirestore.instance;
+      String date = "${currentDate.year}-${currentDate.month.toString().padLeft(2, '0')}-${currentDate.day.toString().padLeft(2, '0')}";
+      DocumentSnapshot<Map<String, dynamic>>? todayDoc;
 
-  Future<List<PrayerModel>> getAllTrackerData(String userId, {required int year,required int month,}) async {
-    String formatDate(DateTime date) =>
-        "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
-
-    //final firstDayOfMonth = DateTime(year, month, 1);
-    final nextMonth = DateTime(year, month + 1, 1);
-    final lastDayOfMonth = nextMonth.subtract(const Duration(days: 1));
-
-    final firestore = FirebaseFirestore.instance;
-    List<PrayerModel> results = [];
-
-    for (int i = 0; i < lastDayOfMonth.day; i++) {
-      final date = DateTime(year, month, i + 1);
-      final dateString = formatDate(date);
-
-      final doc = await firestore
-          .collection('tracker')
-          .doc(userId)
-          .collection('prayer')
-          .doc(dateString)
-          .get();
-
-      if (doc.exists) {
-        results.add(PrayerModel.fromMap(dateString, doc.data()!));
-      } else {
-        results.add(PrayerModel.empty(dateString));
+      // today doc
+      if(userId != null) {
+        todayDoc = await firestore
+            .collection('tracker')
+            .doc(userId)
+            .collection('prayer')
+            .doc(date)
+            .get();
       }
-    }
 
-    return results;
+      PrayerTimes prayerTimes = PrayerTimes(
+        coordinates: coordinates,
+        date: tz.TZDateTime.from(currentDate, location),
+        calculationParameters: params,
+      );
+
+      final convertedFajr = tz.TZDateTime.from(prayerTimes.fajr!, location);
+      final convertedDhuhr = tz.TZDateTime.from(prayerTimes.dhuhr!, location);
+      final convertedAsr = tz.TZDateTime.from(prayerTimes.asr!, location);
+      final convertedMaghrib = tz.TZDateTime.from(prayerTimes.maghrib!, location);
+      final convertedIsha = tz.TZDateTime.from(prayerTimes.isha!, location);
+      PrayerDatabase prayerData = PrayerDatabase(
+          date: date,
+          fajr: convertedFajr,
+          dhuhr: convertedDhuhr,
+          asr: convertedAsr,
+          maghrib: convertedMaghrib,
+          isha: convertedIsha
+      );
+
+      if(todayDoc != null && todayDoc.exists){
+        final data = todayDoc.data()!;
+        prayerData
+          ..doneFajr = data['fajr'] == 1
+          ..doneDhuhr = data['dhuhr'] == 1
+          ..doneAsr = data['asr'] == 1
+          ..doneMaghrib = data['maghrib'] == 1
+          ..doneIsha = data['isha'] == 1;
+      }
+
+      log('Prayer data for date $date is successfully inserted');
+      prayerBox.put(prayerData);
+    }
   }
 }
