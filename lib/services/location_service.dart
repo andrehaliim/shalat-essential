@@ -37,8 +37,6 @@ class LocationService {
     if (placemarks.isNotEmpty) {
       final place = placemarks.first;
       String location = '${place.subAdministrativeArea}, ${place.administrativeArea}, ${place.country}';
-      print('----- coordinate is latitude : $latitude | longitude : $longitude -----');
-      print('----- location name is $location -----');
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('location', location);
       await prefs.setDouble('lat', latitude);

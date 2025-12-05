@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../services/colors.dart';
+
 class Compass extends StatefulWidget {
   const Compass({super.key});
 
@@ -160,4 +162,38 @@ class _CompassState extends State<Compass> {
       },
     );
   }
+}
+
+void showCompass(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return Dialog(
+        insetPadding: const EdgeInsets.all(10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        backgroundColor: AppColors.background,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Align(
+                alignment: Alignment.topRight,
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(Icons.close),
+                ),
+              ),
+              Text('Qibla Compass', style: Theme.of(context).textTheme.headlineMedium),
+              const SizedBox(height: 10),
+              Compass(),
+              const SizedBox(height: 50),
+            ],
+          ),
+        ),
+      );
+    },
+  );
 }

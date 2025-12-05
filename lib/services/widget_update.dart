@@ -1,20 +1,17 @@
 import 'package:home_widget/home_widget.dart';
 import 'package:intl/intl.dart';
-import 'package:shalat_essential/services/prayer_model.dart';
+
+import '../objectbox/prayer_database.dart';
 
 class WidgetUpdate {
   Future<void> updateWidgetPrayerTime({
-    required DateTime fajr,
-    required DateTime dhuhr,
-    required DateTime asr,
-    required DateTime maghrib,
-    required DateTime isha,
+    required PrayerDatabase prayerDatabase
   }) async {
-    await HomeWidget.saveWidgetData<String>('fajr_time', DateFormat('HH:mm').format(fajr));
-    await HomeWidget.saveWidgetData<String>('dhuhr_time', DateFormat('HH:mm').format(dhuhr));
-    await HomeWidget.saveWidgetData<String>('asr_time', DateFormat('HH:mm').format(asr));
-    await HomeWidget.saveWidgetData<String>('maghrib_time', DateFormat('HH:mm').format(maghrib));
-    await HomeWidget.saveWidgetData<String>('isha_time', DateFormat('HH:mm').format(isha));
+    await HomeWidget.saveWidgetData<String>('fajr_time', DateFormat('HH:mm').format(prayerDatabase.fajr));
+    await HomeWidget.saveWidgetData<String>('dhuhr_time', DateFormat('HH:mm').format(prayerDatabase.dhuhr));
+    await HomeWidget.saveWidgetData<String>('asr_time', DateFormat('HH:mm').format(prayerDatabase.asr));
+    await HomeWidget.saveWidgetData<String>('maghrib_time', DateFormat('HH:mm').format(prayerDatabase.maghrib));
+    await HomeWidget.saveWidgetData<String>('isha_time', DateFormat('HH:mm').format(prayerDatabase.isha));
 
     await HomeWidget.saveWidgetData<String>('date_time', DateFormat('dd MMMM yyyy').format(DateTime.now()));
 
@@ -30,20 +27,12 @@ class WidgetUpdate {
     );
   }
 
-  Future<void> updateWidgetPrayerTracker({required PrayerModel? prayerModel}) async {
-    if(prayerModel != null){
-      await HomeWidget.saveWidgetData<bool>('fajr_check', prayerModel.fajr == 1 ? true : false);
-      await HomeWidget.saveWidgetData<bool>('dhuhr_check', prayerModel.dhuhr == 1 ? true : false);
-      await HomeWidget.saveWidgetData<bool>('asr_check', prayerModel.asr == 1 ? true : false);
-      await HomeWidget.saveWidgetData<bool>('maghrib_check', prayerModel.maghrib == 1 ? true : false);
-      await HomeWidget.saveWidgetData<bool>('isha_check', prayerModel.isha == 1 ? true : false);
-    } else {
-      await HomeWidget.saveWidgetData<bool>('fajr_check', false);
-      await HomeWidget.saveWidgetData<bool>('dhuhr_check',false);
-      await HomeWidget.saveWidgetData<bool>('asr_check', false);
-      await HomeWidget.saveWidgetData<bool>('maghrib_check', false);
-      await HomeWidget.saveWidgetData<bool>('isha_check', false);
-    }
+  Future<void> updateWidgetPrayerTracker({required PrayerDatabase prayerDatabase}) async {
+      await HomeWidget.saveWidgetData<bool>('fajr_check', prayerDatabase.doneFajr);
+      await HomeWidget.saveWidgetData<bool>('dhuhr_check', prayerDatabase.doneAsr);
+      await HomeWidget.saveWidgetData<bool>('asr_check', prayerDatabase.doneAsr);
+      await HomeWidget.saveWidgetData<bool>('maghrib_check', prayerDatabase.doneMaghrib);
+      await HomeWidget.saveWidgetData<bool>('isha_check', prayerDatabase.doneIsha);
 
     await HomeWidget.updateWidget(
       name: 'PrayerWidgetProvider',

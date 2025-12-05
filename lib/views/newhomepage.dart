@@ -2,14 +2,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
+import 'package:lat_lng_to_timezone/lat_lng_to_timezone.dart' as tzmap;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:shalat_essential/components/rotating_dot.dart';
+import 'package:shalat_essential/objectbox/location_database.dart';
 import 'package:shalat_essential/services/prayer_service.dart';
-import 'package:timezone/timezone.dart' as tz;
-import 'package:lat_lng_to_timezone/lat_lng_to_timezone.dart' as tzmap;
 import 'package:timezone/data/latest.dart' as tzl;
+import 'package:timezone/timezone.dart' as tz;
 
+import '../components/compass.dart';
 import '../main.dart';
 import '../objectbox.g.dart';
 import '../objectbox/prayer_database.dart';
@@ -17,6 +19,7 @@ import '../services/colors.dart';
 import '../services/firebase_service.dart';
 import '../services/location_service.dart';
 import '../services/prayer_tile.dart';
+import '../services/widget_update.dart';
 import 'history.dart';
 import 'login.dart';
 
@@ -42,6 +45,7 @@ class _NewHomePageState extends State<NewHomePage> {
   String nextPrayerTime = '';
   String nickName = 'Guest';
   late Box<PrayerDatabase> prayerBox;
+  late Box<LocationDatabase> locationBox;
   User? firebaseUser;
   late PrayerDatabase? todayPrayer;
   late PrayerDatabase? yesterdayPrayer;
@@ -54,7 +58,10 @@ class _NewHomePageState extends State<NewHomePage> {
   }
 
   Future<void> initAll() async {
-    loadingAnimation();
+    showLoading();
+    locationBox = objectbox.store.box<LocationDatabase>();
+    prayerBox = objectbox.store.box<PrayerDatabase>();
+
     // 1. User login visibility
     firebaseUser = await FirebaseService.getUserInfo();
     if(firebaseUser != null) {
@@ -62,112 +69,52 @@ class _NewHomePageState extends State<NewHomePage> {
       nickName = await FirebaseService.loadNickname();
     }
 
-    // 2. Location info
+    // 2. Location info and Prayer Data fetching logic
     position = await LocationService().determinePosition();
     locationName = await LocationService().getLocationName(position);
+    WidgetUpdate().updateWidgetLocation(location: locationName);
 
-    // 3. Store shalat data for this month
-    prayerBox = objectbox.store.box<PrayerDatabase>();
-    final firstRow = prayerBox.getAll().isNotEmpty ? prayerBox.getAll().first : null;
-    if (firstRow != null) {
-      final storedMonth = DateTime.parse(firstRow.date).month;
-      final currentMonth = DateTime.now().month;
+    final lastLocation = locationBox.query().order(LocationDatabase_.id, flags: Order.descending).build().findFirst();
+    final firstPrayerRecord = prayerBox.getAll().isNotEmpty ? prayerBox.getAll().first : null;
 
-      if (storedMonth != currentMonth) {
-        await PrayerService.getShalatDataForMonth(position, firebaseUser?.uid);
-      }
+    bool shouldFetchNewData = false;
+
+    // Condition 1: Prayer DB is empty
+    if (firstPrayerRecord == null) {
+      shouldFetchNewData = true;
     } else {
-      // DB empty → must load
+      // Condition 2: Location has changed significantly
+      if (lastLocation != null) {
+        double distanceInMeters = Geolocator.distanceBetween(
+          position.latitude,
+          position.longitude,
+          lastLocation.latitude,
+          lastLocation.longitude,
+        );
+        if (distanceInMeters > 100) {
+          shouldFetchNewData = true;
+        }
+      }
+
+      // Condition 3: Month has changed
+      final storedMonth = DateTime.parse(firstPrayerRecord.date).month;
+      final currentMonth = DateTime.now().month;
+      if (storedMonth != currentMonth) {
+        shouldFetchNewData = true;
+      }
+    }
+
+    if (shouldFetchNewData) {
       await PrayerService.getShalatDataForMonth(position, firebaseUser?.uid);
     }
-    // 4. Read today's record from db
+
+    // 3. Read today's record from db
     await calculateTodayPrayer();
     await calculateNextPrayer(DateTime.now());
 
-    // 5. Refresh widget after async tasks finish
+    // 4. Refresh widget after async tasks finish
     if (mounted) setState(() {});
-    loadingAnimation();
-  }
-
-  Future<void> calculateTodayPrayer() async {
-    tzl.initializeTimeZones();
-    double latitude = position.latitude;
-    double longitude = position.longitude;
-    DateTime today = DateTime.now();
-    DateTime yesterday = DateTime.now().subtract(Duration(days: 1));
-
-    final String todayDate = "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
-    final String yesterdayDate = "${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}";
-
-    todayPrayer = prayerBox.query(PrayerDatabase_.date.equals(todayDate)).build().findFirst();
-    yesterdayPrayer = prayerBox.query(PrayerDatabase_.date.equals(yesterdayDate)).build().findFirst();
-
-    if (todayPrayer != null) {
-      final location = tz.getLocation(tzmap.latLngToTimezoneString(latitude, longitude));
-
-      fajr     = tz.TZDateTime.from(todayPrayer!.fajr, location);
-      dhuhr    = tz.TZDateTime.from(todayPrayer!.dhuhr, location);
-      asr      = tz.TZDateTime.from(todayPrayer!.asr, location);
-      maghrib  = tz.TZDateTime.from(todayPrayer!.maghrib, location);
-      isha     = tz.TZDateTime.from(todayPrayer!.isha, location);
-    }
-  }
-
-  Future<void> calculateNextPrayer(DateTime now) async{
-    // Create ordered list of today's prayer times
-    final List<Map<String, dynamic>> prayersToday = [
-      {"name": "Fajr", "time": fajr},
-      {"name": "Dhuhr", "time": dhuhr},
-      {"name": "Asr", "time": asr},
-      {"name": "Maghrib", "time": maghrib},
-      {"name": "Isha", "time": isha},
-    ];
-
-    // Find the first prayer time that is after current time
-    Map<String, dynamic>? next;
-    for (var p in prayersToday) {
-      if (now.isBefore(p["time"])) {
-        next = p;
-        break;
-      }
-    }
-
-    // If none remaining today -> next is tomorrow's Fajr
-    if (next == null) {
-      // You will load tomorrow's Fajr from DB too in initAll. Example:
-      final tomorrowPrayer = objectbox.store.box<PrayerDatabase>()
-          .query(PrayerDatabase_.date.equals(DateFormat('yyyy-MM-dd').format(now.add(const Duration(days: 1)))))
-          .build()
-          .findFirst();
-
-      next = {
-        "name": "Fajr",
-        "time": tomorrowPrayer!.fajr.add(const Duration(days: 1))
-      };
-    }
-
-    // Calculate remaining duration
-    Duration remaining = next["time"].difference(now);
-    String hours = remaining.inHours.toString().padLeft(2, '0');
-    String minutes = (remaining.inMinutes % 60).toString().padLeft(2, '0');
-
-    setState(() {
-      nextPrayer = next!["name"];
-      nextPrayerTime = "in ${hours}h ${minutes}m";
-    });
-  }
-
-  Future<void> getAppVersion() async {
-    final info = await PackageInfo.fromPlatform();
-    setState(() {
-      appVersion = info.version;
-    });
-  }
-  
-  void loadingAnimation() {
-    setState(() {
-      isLoading = !isLoading;
-    });
+    showLoading();
   }
 
   @override
@@ -244,7 +191,7 @@ class _NewHomePageState extends State<NewHomePage> {
                       child: ElevatedButton(
                         style: Theme.of(context).elevatedButtonTheme.style,
                         onPressed: () async {
-                          //showCompass();
+                          showCompass(context);
                         },
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -498,5 +445,89 @@ class _NewHomePageState extends State<NewHomePage> {
         isLoadingTracker = false;
       });
     }
+  }
+
+  Future<void> calculateTodayPrayer() async {
+    tzl.initializeTimeZones();
+    double latitude = position.latitude;
+    double longitude = position.longitude;
+    DateTime today = DateTime.now();
+    DateTime yesterday = DateTime.now().subtract(Duration(days: 1));
+
+    final String todayDate = "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+    final String yesterdayDate = "${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}";
+
+    todayPrayer = prayerBox.query(PrayerDatabase_.date.equals(todayDate)).build().findFirst();
+    yesterdayPrayer = prayerBox.query(PrayerDatabase_.date.equals(yesterdayDate)).build().findFirst();
+
+    if (todayPrayer != null) {
+      final location = tz.getLocation(tzmap.latLngToTimezoneString(latitude, longitude));
+
+      fajr     = tz.TZDateTime.from(todayPrayer!.fajr, location);
+      dhuhr    = tz.TZDateTime.from(todayPrayer!.dhuhr, location);
+      asr      = tz.TZDateTime.from(todayPrayer!.asr, location);
+      maghrib  = tz.TZDateTime.from(todayPrayer!.maghrib, location);
+      isha     = tz.TZDateTime.from(todayPrayer!.isha, location);
+
+      WidgetUpdate().updateWidgetPrayerTime(prayerDatabase: todayPrayer!);
+      WidgetUpdate().updateWidgetPrayerTracker(prayerDatabase: todayPrayer!);
+    }
+  }
+
+  Future<void> calculateNextPrayer(DateTime now) async{
+    // Create ordered list of today's prayer times
+    final List<Map<String, dynamic>> prayersToday = [
+      {"name": "Fajr", "time": fajr},
+      {"name": "Dhuhr", "time": dhuhr},
+      {"name": "Asr", "time": asr},
+      {"name": "Maghrib", "time": maghrib},
+      {"name": "Isha", "time": isha},
+    ];
+
+    // Find the first prayer time that is after current time
+    Map<String, dynamic>? next;
+    for (var p in prayersToday) {
+      if (now.isBefore(p["time"])) {
+        next = p;
+        break;
+      }
+    }
+
+    // If none remaining today -> next is tomorrow's Fajr
+    if (next == null) {
+      // You will load tomorrow's Fajr from DB too in initAll. Example:
+      final tomorrowPrayer = objectbox.store.box<PrayerDatabase>()
+          .query(PrayerDatabase_.date.equals(DateFormat('yyyy-MM-dd').format(now.add(const Duration(days: 1)))))
+          .build()
+          .findFirst();
+
+      next = {
+        "name": "Fajr",
+        "time": tomorrowPrayer!.fajr.add(const Duration(days: 1))
+      };
+    }
+
+    // Calculate remaining duration
+    Duration remaining = next["time"].difference(now);
+    String hours = remaining.inHours.toString().padLeft(2, '0');
+    String minutes = (remaining.inMinutes % 60).toString().padLeft(2, '0');
+
+    setState(() {
+      nextPrayer = next!["name"];
+      nextPrayerTime = "in ${hours}h ${minutes}m";
+    });
+  }
+
+  Future<void> getAppVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    setState(() {
+      appVersion = info.version;
+    });
+  }
+
+  void showLoading() {
+    setState(() {
+      isLoading = !isLoading;
+    });
   }
 }
